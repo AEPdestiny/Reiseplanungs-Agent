@@ -9,6 +9,12 @@ body {
   background: var(--color-background);
 }
 
+button,
+input,
+textarea {
+  font: inherit;
+}
+
 .panel {
   min-height: 160px;
   padding: var(--space-4);
@@ -29,4 +35,19 @@ body {
 
 .panel-large {
   min-height: 360px;
+}
+
+.empty-state {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  color: var(--color-text-secondary);
+  background: var(--color-background);
+}
+
+.inline-error {
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  color: var(--color-error);
+  background: var(--color-error-soft);
 }

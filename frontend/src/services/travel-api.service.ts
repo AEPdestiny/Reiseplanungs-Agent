@@ -1,25 +1,99 @@
-import type { TripResponseContract } from "@travel-agent/shared";
+import type {
+  AgentInsight,
+  BudgetSummary,
+  Checklist,
+  ReplanningProposal,
+  TravelPlan,
+  WeatherEvent
+} from "@travel-agent/shared";
 
-export const TRAVEL_API_BASE_PATH = "/api";
+export const TRAVEL_API_BASE_PATH = import.meta.env.VITE_TRAVEL_API_BASE_URL ?? "/api";
 
-export async function createDemoTrip(): Promise<TripResponseContract> {
-  const response = await fetch(`${TRAVEL_API_BASE_PATH}/trips/demo`, {
-    method: "POST"
+export interface HealthResponse {
+  status: string;
+}
+
+export interface TripApiResponse {
+  tripId: string;
+  message?: string;
+  plan?: TravelPlan;
+  budget?: BudgetSummary;
+  checklist?: Checklist;
+  proposal?: ReplanningProposal;
+  pendingProposal?: ReplanningProposal | null;
+  requiresUserConfirmation?: boolean;
+  agentInsights?: AgentInsight[];
+}
+
+export interface ChatApiResponse {
+  message: string;
+  plan?: TravelPlan;
+  proposal?: ReplanningProposal | null;
+  requiresUserConfirmation?: boolean;
+  agentInsights?: AgentInsight[];
+}
+
+async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${TRAVEL_API_BASE_PATH}${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {})
+    },
+    ...init
   });
 
   if (!response.ok) {
-    throw new Error("Demo-Reise konnte nicht geladen werden.");
+    throw new Error(await readApiError(response));
   }
 
-  return response.json() as Promise<TripResponseContract>;
+  return response.json() as Promise<T>;
 }
 
-export async function getTrip(tripId: string): Promise<TripResponseContract> {
-  const response = await fetch(`${TRAVEL_API_BASE_PATH}/trips/${tripId}`);
-
-  if (!response.ok) {
-    throw new Error("Reise konnte nicht geladen werden.");
+async function readApiError(response: Response): Promise<string> {
+  try {
+    const payload = (await response.json()) as { error?: { message?: string } };
+    return payload.error?.message ?? `API-Fehler ${response.status}`;
+  } catch {
+    return `API-Fehler ${response.status}`;
   }
+}
 
-  return response.json() as Promise<TripResponseContract>;
+export function healthCheck(): Promise<HealthResponse> {
+  return requestJson<HealthResponse>("/health");
+}
+
+export function loadDemoTrip(): Promise<TripApiResponse> {
+  return requestJson<TripApiResponse>("/trips/demo", {
+    method: "POST"
+  });
+}
+
+export function getTrip(tripId: string): Promise<TripApiResponse> {
+  return requestJson<TripApiResponse>(`/trips/${tripId}`);
+}
+
+export function sendChatMessage(tripId: string, message: string): Promise<ChatApiResponse> {
+  return requestJson<ChatApiResponse>(`/trips/${tripId}/chat`, {
+    method: "POST",
+    body: JSON.stringify({ message })
+  });
+}
+
+export function simulateWeather(tripId: string, weatherEvent: WeatherEvent): Promise<TripApiResponse> {
+  return requestJson<TripApiResponse>(`/trips/${tripId}/simulate-weather`, {
+    method: "POST",
+    body: JSON.stringify(weatherEvent)
+  });
+}
+
+export function acceptProposal(tripId: string, proposalId: string): Promise<TripApiResponse> {
+  return requestJson<TripApiResponse>(`/trips/${tripId}/proposals/${proposalId}/accept`, {
+    method: "POST"
+  });
+}
+
+export function rejectProposal(tripId: string, proposalId: string): Promise<TripApiResponse> {
+  return requestJson<TripApiResponse>(`/trips/${tripId}/proposals/${proposalId}/reject`, {
+    method: "POST"
+  });
 }

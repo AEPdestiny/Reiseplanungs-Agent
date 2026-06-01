@@ -2,11 +2,19 @@ import { defineStore } from "pinia";
 import type { BudgetSummary } from "@travel-agent/shared";
 
 interface BudgetState {
-  summary: BudgetSummary | null;
+  budget: BudgetSummary | null;
 }
 
 export const useBudgetStore = defineStore("budget", {
   state: (): BudgetState => ({
-    summary: null
-  })
+    budget: null
+  }),
+  actions: {
+    setBudget(budget?: BudgetSummary): void {
+      this.budget = budget ?? null;
+    },
+    clear(): void {
+      this.budget = null;
+    }
+  }
 });

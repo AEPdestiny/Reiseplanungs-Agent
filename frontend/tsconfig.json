@@ -12,5 +12,5 @@
       "@travel-agent/shared/*": ["../shared/src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts", "../shared/src/**/*.ts"]
 }

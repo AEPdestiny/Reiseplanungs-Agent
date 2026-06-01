@@ -1,5 +1,14 @@
 <template>
-  <DashboardLayout>
+  <DashboardLayout
+    :has-trip="tripStore.hasTrip"
+    :is-loading-demo="tripStore.loading"
+    :is-replanning="proposalStore.loading"
+    :has-pending-proposal="Boolean(proposalStore.pendingProposal)"
+    :api-status="apiStatus"
+    :error="pageError"
+    @load-demo="loadDemoTrip"
+    @simulate-rain="simulateRain"
+  >
     <template #chat>
       <ChatPanel />
     </template>
@@ -25,6 +34,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, ref } from "vue";
 import AgentInsightsPanel from "@/components/agent-insights/AgentInsightsPanel.vue";
 import BudgetPanel from "@/components/budget/BudgetPanel.vue";
 import ChatPanel from "@/components/chat/ChatPanel.vue";
@@ -33,4 +43,32 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout.vue";
 import ReplanningProposalPanel from "@/components/replanning/ReplanningProposalPanel.vue";
 import DayPlanPanel from "@/components/trip/DayPlanPanel.vue";
 import RouteMapPanel from "@/components/trip/RouteMapPanel.vue";
+import { healthCheck } from "@/services/travel-api.service";
+import { useProposalStore } from "@/stores/proposal.store";
+import { useTripStore } from "@/stores/trip.store";
+
+const tripStore = useTripStore();
+const proposalStore = useProposalStore();
+const apiStatus = ref<"checking" | "online" | "offline">("checking");
+
+const pageError = computed(() => tripStore.error ?? proposalStore.error);
+
+onMounted(async () => {
+  try {
+    await healthCheck();
+    apiStatus.value = "online";
+  } catch {
+    apiStatus.value = "offline";
+  }
+});
+
+async function loadDemoTrip(): Promise<void> {
+  await tripStore.loadDemoTrip();
+}
+
+async function simulateRain(): Promise<void> {
+  if (tripStore.tripId) {
+    await proposalStore.simulateRainForDay2(tripStore.tripId);
+  }
+}
 </script>
