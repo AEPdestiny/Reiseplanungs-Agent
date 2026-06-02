@@ -1,3 +1,74 @@
+# Reiseplanungs-Agent
+
+Version: MVP 1
+Status: Active Development
+Letzte Aktualisierung: 2026-06-02
+
+## Projektstatus
+
+| Bereich | Status |
+| --- | --- |
+| Architektur | ✅ |
+| Backend | ✅ |
+| Replanning | ✅ |
+| OpenAI Integration | ✅ |
+| Dashboard MVP | ✅ |
+| Echte Reiseplanung | ⏳ |
+| Externe APIs | ⏳ |
+| PostgreSQL | ⏳ |
+
+## MVP-1 Fortschritt
+
+| Feature | Status |
+| --- | --- |
+| Demo-Reise | ✅ |
+| Dashboard | ✅ |
+| Chat | ✅ |
+| Budget | ✅ |
+| Checkliste | ✅ |
+| Agent Insights | ✅ |
+| Proposal Flow | ✅ |
+| Wettersimulation | ✅ |
+| OpenAI Integration | ✅ |
+| AI Generated Travel Planning | ⏳ |
+| PostgreSQL | ⏳ |
+| Externe APIs | ⏳ |
+| PDF Export | ⏳ |
+| Kalender Export | ⏳ |
+
+## Inhaltsverzeichnis
+
+- [Projektstatus](#projektstatus)
+- [MVP-1 Fortschritt](#mvp-1-fortschritt)
+- [Inhaltsverzeichnis](#inhaltsverzeichnis)
+- [1. Projektuebersicht](#1-projektuebersicht)
+- [2. Ziel des Prototyps](#2-ziel-des-prototyps)
+- [3. MVP-Abgrenzung](#3-mvp-abgrenzung)
+- [4. Zielgruppe](#4-zielgruppe)
+- [5. Kernfunktionen](#5-kernfunktionen)
+- [6. User Stories](#6-user-stories)
+- [7. Acceptance Criteria](#7-acceptance-criteria)
+- [8. Demo-Szenario](#8-demo-szenario)
+- [9. Systemarchitektur](#9-systemarchitektur)
+- [10. Frontend-Architektur](#10-frontend-architektur)
+- [11. Backend-Architektur](#11-backend-architektur)
+- [12. Agentenarchitektur](#12-agentenarchitektur)
+- [13. Agenten-Schnittstellen](#13-agenten-schnittstellen)
+- [14. Datenmodelle](#14-datenmodelle)
+- [15. API-Endpunkte](#15-api-endpunkte)
+- [16. Mock-Daten-Konzept](#16-mock-daten-konzept)
+- [17. Replanning-Logik](#17-replanning-logik)
+- [18. Nutzerbestaetigungs-Flow](#18-nutzerbestaetigungs-flow)
+- [19. Fehlerbehandlung](#19-fehlerbehandlung)
+- [20. Erweiterbarkeit fuer MVP 2 und MVP 3](#20-erweiterbarkeit-fuer-mvp-2-und-mvp-3)
+- [21. Nicht-Ziele fuer MVP 1](#21-nicht-ziele-fuer-mvp-1)
+- [22. Technische Risiken](#22-technische-risiken)
+- [Technische Anforderungen](#technische-anforderungen)
+- [Architekturentscheidungen (ADR)](#architekturentscheidungen-adr)
+- [Sequence Diagrams](#sequence-diagrams)
+- [Offene Fragen](#offene-fragen)
+- [24. Implementierungs-Roadmap](#24-implementierungs-roadmap)
+
 # Technische Spezifikation: Intelligenter Reiseplanungs-Agent mit GenAI
 
 ## 1. Projektuebersicht
@@ -1337,18 +1408,254 @@ Massnahmen:
 - Budgetberechnung nicht durch das LLM ausfuehren lassen
 - Agentenaufrufe fuer MVP 1 auf demo-relevante Workflows begrenzen
 
-## 23. Offene Fragen
+## Technische Anforderungen
 
-- Soll der Chat freie Folgefragen beantworten oder nur gesteuerte Aktionen ausloesen?
-- Soll die Karte in MVP 1 als Platzhalter, schematische Route oder einfache statische Ortsliste umgesetzt werden?
-- Sollen Mock-Daten manuell kuratiert oder teilweise generiert werden?
-- Soll die Checkliste vom Reiseplan abhaengen oder zunaechst generisch fuer Staedtereisen sein?
-- Welche Gewichtung soll `ActivityScore.overallScore` initial verwenden?
-- Soll das AgentInsightsPanel eine kompakte oder detaillierte Darstellung bekommen?
+### Stack & Architektur - Entscheidungen final
+
+| Komponente | Entscheidung | Begruendung |
+| --- | --- | --- |
+| Sprache | TypeScript | Einheitliche Sprache fuer Frontend, Backend und Shared Types reduziert Reibung, vermeidet doppelte Modellpflege und erhoeht die Typsicherheit im Monorepo. |
+| Frontend | Vue 3 + Vite + Pinia + Vue Router | Vue 3 ermoeglicht eine schnelle, komponentenbasierte Dashboard-Web-App; Vite beschleunigt Entwicklung und Build; Pinia und Vue Router decken MVP-1-State und Navigation schlank ab. |
+| Backend | Node.js + NestJS | NestJS liefert klare Modulgrenzen, Dependency Injection und Controller/Service-Strukturen, die gut zu API, Agenten-Orchestrierung und spaeteren Providern passen. |
+| Monorepo | npm Workspaces | Frontend, Backend und Shared Types bleiben gemeinsam versioniert; API- und Domain-Typen koennen konsistent zwischen den Packages genutzt werden. |
+| LLM | OpenAI Responses API | Die Responses API ist fuer agentische Workflows, Assistenzantworten und strukturierte Ausgaben geeignet und bleibt im Backend zentral gekapselt. |
+| Modell MVP 1 | `gpt-5` | Fuer MVP 1 wird ein leistungsfaehiges Modell als Standard gesetzt, damit Chatantworten und Begruendungen demo-tauglich und stabil wirken. |
+| Agenten-Orchestrierung | Eigene NestJS-Orchestrierung | Die Workflows bleiben transparent, deterministisch kontrollierbar und eng an die fachlichen Services gebunden; das reduziert Framework-Overhead und erleichtert Reviews. |
+| Agenten-Framework | Kein LangChain, kein LangGraph | MVP 1 benoetigt keine komplexe Graph- oder Chain-Abstraktion; eigene NestJS-Services reichen fuer Coordinator, Spezialagenten, Proposals und klare Verantwortlichkeiten aus. |
+| Datenbank MVP 1 | In-Memory Storage | In-Memory Storage haelt den Demo-Prototyp schlank, schnell startbar und unabhaengig von Datenbanksetup oder Migrationen. |
+| Datenbank MVP 2 | PostgreSQL | PostgreSQL ist fuer persistente Reisen, Nutzerpraeferenzen, Reisehistorie und spaetere relationale Abfragen geeignet. |
+| Wetter MVP 1 | `MockWeatherProvider` | Mock-Wetter macht das Demo-Szenario reproduzierbar und erlaubt kontrolliertes Replanning ohne externe API-Abhaengigkeit. |
+| Wetter MVP 2 | externe Wetter-API | Echte Wetterdaten werden erst relevant, wenn die Anwendung ueber die stabile Demo hinaus realistische Planung unterstuetzen soll. |
+| Places MVP 1 | Mock-Daten | Kuratierte Mock-Aktivitaeten sichern stabile Empfehlungen, nachvollziehbare Scores und eine verlaessliche Berlin-Demo. |
+| Places MVP 2 | Google Places API | Google Places kann spaeter echte Restaurants, Museen, Aktivitaeten, Standortdaten und Oeffnungszeiten liefern. |
+| Budgetberechnung | Deterministischer `BudgetService` | Budgetwerte muessen nachvollziehbar, testbar und wiederholbar sein; das LLM darf erklaeren, aber keine unvalidierten Summen als Wahrheit setzen. |
+| Replanning | Proposal-basierter Accept/Reject-Flow | Kritische Plan- und Budgetaenderungen werden nicht automatisch uebernommen, damit Nutzer Kontrolle behalten und der aktive Plan stabil bleibt. |
+| UI | Dashboard-zentriert | Der Chat ist wichtig, aber Tagesplan, Budget, Route, Checkliste und Agent Insights muessen parallel sichtbar und steuerbar bleiben. |
+| Testing MVP 1 | Manuelle PowerShell/API-Tests + TypeScript Checks | Fuer den Demo-Prototyp reichen reproduzierbare API-Flows, Build-/Typechecks und manuelle Browserpruefung; automatisierte E2E-Tests koennen spaeter folgen. |
+| Export MVP 3 | PDF-Export + Kalender-Export | Exporte sind wertvolle Produktfeatures, gehoeren aber nicht in den MVP-1-Kern der agentischen Planung und Neuplanung. |
+
+### Externe Schnittstellen
+
+| Schnittstelle | Zweck | Status | Details |
+| --- | --- | --- | --- |
+| OpenAI Responses API | Chatantworten, Begruendungen, strukturierte Assistenz | vorbereitet / teilweise implementiert | Modell: `gpt-5`, Fallback ohne API-Key, Kapselung im `OpenAiService` |
+| Wetter-API | echte Wetterdaten fuer Replanning | MVP 2 | in MVP 1 ueber `MockWeatherProvider` simuliert |
+| Google Places API | Restaurants, Museen, Aktivitaeten | MVP 2 | in MVP 1 ueber `MockDataService` und kuratierte Berlin-Daten simuliert |
+| Flugstatus-API | Flugzeitaenderungen | MVP 3 | spaeterer Replanning-Trigger fuer Anreise- und Tagesplananpassungen |
+| PDF Export | Reiseplan exportieren | MVP 3 | spaeteres Export Feature fuer teilbare Reiseplaene |
+| Kalender Export | Tagesplan in Kalender uebernehmen | MVP 3 | spaeteres Export Feature fuer Zeitfenster und Aktivitaeten |
+
+## Architekturentscheidungen (ADR)
+
+### ADR-001: Eigene NestJS-Orchestrierung statt LangChain/LangGraph
+
+**Status:** Angenommen
+
+**Kontext:**
+
+MVP 1 benoetigt einen nachvollziehbaren Agentenworkflow mit Coordinator Agent, spezialisierten Agent Services, Budgetpruefung, Proposal-Erzeugung und Nutzerbestaetigung. Die Anwendung ist eine NestJS-API mit klarer Service- und Modulstruktur. Externe Agentenframeworks wie LangChain oder LangGraph wuerden zusaetzliche Abstraktionen einfuehren.
+
+**Entscheidung:**
+
+Die Agenten-Orchestrierung wird als eigene NestJS-Orchestrierung umgesetzt. Der Coordinator Agent und die Spezialagenten werden als explizite Services modelliert. LangChain und LangGraph werden fuer MVP 1 nicht verwendet.
+
+**Begruendung:**
+
+Die eigene Orchestrierung haelt Verantwortlichkeiten sichtbar, testbar und reviewbar. Sie passt direkt zur vorhandenen NestJS-Dependency-Injection und vermeidet Framework-Komplexitaet, die fuer den MVP-1-Workflow nicht erforderlich ist. Kritische Entscheidungen wie Budgetberechnung, Replanning und Accept/Reject bleiben unter direkter Kontrolle des Backends.
+
+**Konsequenzen:**
+
+- Agentenworkflows bleiben transparent und leicht zu erklaeren.
+- Es entsteht weniger externe Framework-Abhaengigkeit.
+- Komplexere spaetere Agentengraphen muessen bei Bedarf selbst modelliert oder neu bewertet werden.
+- Das Team traegt selbst Verantwortung fuer Orchestrierung, Tracing und Fehlerbehandlung.
+
+### ADR-002: Mock-Daten vor echten APIs
+
+**Status:** Angenommen
+
+**Kontext:**
+
+Die MVP-1-Demo soll stabil zeigen, wie Reiseplanung, Budget, Empfehlungen, Wetter-Replanning und Proposals zusammenspielen. Echte Wetter-, Places-, Flugstatus- oder Preisdaten koennen Latenz, Kosten, API-Limits, Datenqualitaetsprobleme und unvorhersehbares Demo-Verhalten verursachen.
+
+**Entscheidung:**
+
+MVP 1 nutzt kuratierte Mock-Daten und Mock Provider. Echte externe APIs werden erst ab MVP 2 bzw. MVP 3 integriert.
+
+**Begruendung:**
+
+Mock-Daten sichern eine reproduzierbare Berlin-Demo und erlauben gezielte Testfaelle wie "Regen an Tag 2". Sie reduzieren Integrationsrisiken und halten den MVP fokussiert auf Agenten-Orchestrierung, Replanning und UI-Darstellung.
+
+**Konsequenzen:**
+
+- Die Demo ist stabil und unabhaengig von externen Diensten.
+- API-Adapter koennen spaeter hinter Provider-Interfaces ergaenzt werden.
+- MVP 1 bildet keine vollstaendige Realwelt-Datenqualitaet ab.
+- Spaetere MVPs muessen Datenmapping, Fehlerfaelle, Rate Limits und Persistenz ergaenzen.
+
+### ADR-003: Dashboard-zentrierte UI statt Chat-only UI
+
+**Status:** Angenommen
+
+**Kontext:**
+
+Der Chat ist ein wichtiger Interaktionskanal, aber Reiseplanung besteht aus strukturierten Informationen: Tagesplan, Budget, Route, Checkliste, Agent Insights und Proposals. Eine Chat-only UI wuerde diese Informationen schwer vergleichbar machen.
+
+**Entscheidung:**
+
+Die Anwendung nutzt eine dashboard-zentrierte UI. Der Chat bleibt sichtbar, ist aber nicht die einzige Steuerungs- und Informationsflaeche.
+
+**Begruendung:**
+
+Ein Dashboard macht Plaene, Kosten, Aenderungsvorschlaege und Agentenschritte gleichzeitig sichtbar. Nutzer koennen Entscheidungen schneller verstehen und Proposals besser pruefen. Das unterstuetzt die Demo-Story und reduziert Missverstaendnisse bei kritischen Planaenderungen.
+
+**Konsequenzen:**
+
+- Tagesplan, Budget und Proposal Flow sind praesentationsstark sichtbar.
+- Frontend-Komponenten muessen strukturierte Backend-Daten sauber darstellen.
+- Die UI ist komplexer als ein reiner Chat, bleibt aber fuer MVP 1 modular.
+- Chatantworten duerfen strukturierte UI-Bereiche nicht ersetzen.
+
+### ADR-004: Proposal-basierter Replanning-Flow
+
+**Status:** Angenommen
+
+**Kontext:**
+
+Wetteraenderungen oder Nutzerwuensche koennen Aktivitaeten, Tagesstruktur und Budget veraendern. Automatische Planmutation wuerde Nutzerkontrolle verringern und die Nachvollziehbarkeit des aktiven Plans schwaechen.
+
+**Entscheidung:**
+
+Replanning erzeugt ein `ReplanningProposal` mit Status `pending`. Der aktive Plan wird erst nach explizitem Accept ersetzt. Bei Reject bleibt der aktive Plan unveraendert.
+
+**Begruendung:**
+
+Der Proposal Flow trennt Vorschlag und aktiven Plan klar. Nutzer sehen Grund, betroffene Tage, PlanChanges und Budgetauswirkung, bevor Aenderungen uebernommen werden. Das ist fachlich sicherer und demo-tauglicher als automatische Uebernahme.
+
+**Konsequenzen:**
+
+- Kritische Aenderungen bleiben kontrolliert und nachvollziehbar.
+- Frontend muss pending Proposals deutlich hervorheben.
+- Backend muss Proposal-Status und aktive Planversion sauber trennen.
+- Spaeter muss produktseitig entschieden werden, ob mehrere pending Proposals erlaubt sind.
+
+### ADR-005: Deterministische Budgetberechnung statt LLM-basierter Budgetlogik
+
+**Status:** Angenommen
+
+**Kontext:**
+
+Budgetwerte sind zentrale Entscheidungsdaten. Falsche oder nicht reproduzierbare Summen wuerden Vertrauen und Demo-Qualitaet untergraben. LLMs koennen Begruendungen liefern, sind aber fuer verbindliche Rechenlogik nicht die richtige Source of Truth.
+
+**Entscheidung:**
+
+Budgetwerte werden deterministisch im `BudgetService` berechnet. Das LLM darf Budgetentscheidungen erklaeren, aber keine unvalidierten Summen als finale Werte setzen.
+
+**Begruendung:**
+
+Deterministische Berechnung ist nachvollziehbar, testbar und wiederholbar. Sie ermoeglicht klare Budgetkategorien, Restbudget, Pro-Person-Werte und Statuswerte wie `within_budget`, `near_limit` und `over_budget`.
+
+**Konsequenzen:**
+
+- Budgetdaten bleiben verlaesslich und auditierbar.
+- LLM-Ausgaben muessen nicht als mathematische Wahrheit vertraut werden.
+- Aenderungen an Kostenlogik werden zentral im BudgetService umgesetzt.
+- Das Frontend zeigt Budgetdaten nur an und berechnet keine finalen Budgetwerte.
+
+## Sequence Diagrams
+
+### Initiale Reiseplanung
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend
+    participant TravelController
+    participant Coordinator as Coordinator Agent
+    participant Planning as Planning Agent
+    participant Recommendation as Recommendation Agent
+    participant Budget as Budget Agent
+    participant Checklist as Checklist Agent
+
+    User->>Frontend: Demo-Reise laden
+    Frontend->>TravelController: POST /api/trips/demo
+    TravelController->>Coordinator: Planungsworkflow starten
+    Coordinator->>Planning: Tagesstruktur erzeugen
+    Planning-->>Coordinator: TravelDay[] und TimeSlots
+    Coordinator->>Recommendation: Aktivitaeten bewerten und auswaehlen
+    Recommendation-->>Coordinator: Empfehlungen und ActivityScores
+    Coordinator->>Budget: Budget berechnen
+    Budget-->>Coordinator: BudgetSummary
+    Coordinator->>Checklist: Checkliste erstellen
+    Checklist-->>Coordinator: Checklist
+    Coordinator-->>TravelController: TravelPlan, Budget, Checklist, AgentInsights
+    TravelController-->>Frontend: DemoTripResponse
+    Frontend-->>User: Dashboard mit Plan, Budget, Checkliste und Agent Insights anzeigen
+```
+
+### Wettersimulation / Replanning
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend
+    participant WeatherAPI as Weather Simulation API
+    participant Coordinator as Coordinator Agent
+    participant Replanning as Replanning Agent
+    participant Recommendation as Recommendation Agent
+    participant Budget as Budget Agent
+    participant Proposal
+    participant ProposalService as Proposal Service
+
+    User->>Frontend: Regen an Tag 2 simulieren
+    Frontend->>WeatherAPI: POST /api/trips/:tripId/simulate-weather
+    WeatherAPI->>Coordinator: Wetterereignis verarbeiten
+    Coordinator->>Replanning: Betroffene Aktivitaeten ermitteln
+    Replanning->>Recommendation: Indoor-Alternativen anfragen
+    Recommendation-->>Replanning: Bewertete Alternativen
+    Replanning->>Budget: Budget fuer proposedPlan berechnen
+    Budget-->>Replanning: BudgetSummary nach Aenderung
+    Replanning->>Proposal: ReplanningProposal mit Status pending erstellen
+    Proposal-->>WeatherAPI: Pending Proposal
+    WeatherAPI-->>Frontend: Proposal und requiresUserConfirmation
+    Frontend-->>User: Proposal anzeigen
+    alt Nutzer akzeptiert
+        User->>Frontend: Aenderungen uebernehmen
+        Frontend->>ProposalService: POST /api/trips/:tripId/proposals/:proposalId/accept
+        ProposalService-->>Frontend: Active Plan aktualisiert
+    else Nutzer lehnt ab
+        User->>Frontend: Ablehnen
+        Frontend->>ProposalService: POST /api/trips/:tripId/proposals/:proposalId/reject
+        ProposalService-->>Frontend: Aktiver Plan bleibt unveraendert
+    end
+```
+
+## Offene Fragen
+
+| # | Frage | Status | Entscheidung / Naechster Schritt |
+| --- | --- | --- | --- |
+| OQ-01 | Welcher Tech-Stack wird verwendet? | Geklaert | Vue 3, NestJS, TypeScript, npm Workspaces |
+| OQ-02 | Welche Agentenarchitektur wird verwendet? | Geklaert | Coordinator Agent + spezialisierte Agent Services |
+| OQ-03 | Eigenes Agentensystem oder Framework? | Geklaert | Eigene NestJS-Orchestrierung, kein LangChain/LangGraph |
+| OQ-04 | Wie werden Budgetwerte berechnet? | Geklaert | Deterministisch ueber `BudgetService` |
+| OQ-05 | Werden echte APIs in MVP 1 genutzt? | Geklaert | Nein, MVP 1 nutzt Mock-Daten; echte APIs ab MVP 2 |
+| OQ-06 | Wie funktioniert Replanning? | Geklaert | Wetteraenderung erzeugt pending Proposal, Nutzer bestaetigt oder lehnt ab |
+| OQ-07 | Wie wird OpenAI genutzt? | Geklaert | Assistenz, Begruendungen, Chat; keine direkte Planmutation |
+| OQ-08 | Soll der Chat Planaenderungen automatisch durchfuehren? | Geklaert | Nein, Aenderungen bleiben proposal-basiert |
+| OQ-09 | Soll MVP 1 eine echte Karte haben? | Geklaert | Nein, nur schematische Routen-/Ortsliste |
+| OQ-10 | Soll PostgreSQL direkt eingebaut werden? | Geklaert | Nein, erst MVP 2 |
+| OQ-11 | Soll DTO Validation mit `class-validator` ergaenzt werden? | Offen | Nach MVP-Demo pruefen |
+| OQ-12 | Soll OpenAI Logging verbessert werden? | Offen | Spaeter `Logger.warn` und Fehlerdetails ergaenzen |
+| OQ-13 | Soll es mehrere pending Proposals geben duerfen? | Offen | Fuer MVP 1 akzeptiert; spaeter Produktentscheidung |
+| OQ-14 | Soll mixed Outdoor/Indoor bei Regen ersetzt werden? | Offen | Fuer MVP 1 nur outdoor; spaeter erweitern |
+| OQ-15 | Wie wird die finale Praesentation aufgebaut? | Offen | Demo-Story: Berlin-Reise, Regen an Tag 2, Agent plant um |
+| OQ-16 | Soll der Chat freie Folgefragen beantworten oder nur gesteuerte Aktionen ausloesen? | Teilweise geklaert | MVP 1 erlaubt Chatfragen; produktive Aktionsausloesung bleibt proposal-basiert |
+| OQ-17 | Welche Gewichtung soll `ActivityScore.overallScore` langfristig verwenden? | Offen | MVP 1 deterministisch einfach halten; Gewichtung spaeter fachlich validieren |
+| OQ-18 | Soll das AgentInsightsPanel kompakt oder detailliert sein? | Teilweise geklaert | MVP 1 kompakt und demo-tauglich; Detailtiefe spaeter pruefen |
 
 ## 24. Implementierungs-Roadmap
 
-### Phase 1: Projektgrundlage
+### Phase 1: Projektgrundlage - abgeschlossen
 
 - Monorepo- oder getrennte Frontend/Backend-Struktur festlegen
 - Vue 3 App mit TypeScript, Pinia und Vue Router einrichten
@@ -1356,7 +1663,7 @@ Massnahmen:
 - gemeinsame Typdefinitionen abstimmen
 - Basislayout fuer Dashboard erstellen
 
-### Phase 2: Mock-Daten und Modelle
+### Phase 2: Mock-Daten und Modelle - abgeschlossen
 
 - Datenmodelle fuer Trip, Plan, Activity, Budget, Proposal und Checklist definieren
 - Mock-Daten fuer Berlin erstellen
@@ -1365,7 +1672,7 @@ Massnahmen:
 - MockDataService implementieren
 - BudgetService mit deterministischer Berechnung implementieren
 
-### Phase 3: Initiale Planung
+### Phase 3: Initiale Planung - abgeschlossen
 
 - Travel Planning API erstellen
 - AgentOrchestratorService erstellen
@@ -1374,7 +1681,7 @@ Massnahmen:
 - Frontend-Dashboard mit initialem Plan verbinden
 - AgentInsightsPanel mit Agent Trace verbinden
 
-### Phase 4: OpenAI Integration
+### Phase 4: OpenAI Integration - abgeschlossen
 
 - OpenAiModule erstellen
 - Responses API anbinden
@@ -1383,7 +1690,7 @@ Massnahmen:
 - Validierung und Fallbacks einbauen
 - agentische Begruendungen im UI anzeigen
 
-### Phase 5: Replanning Demo
+### Phase 5: Replanning Demo - abgeschlossen
 
 - Wetter-Simulation API erstellen
 - Weather Provider Interface fuer Mock-Wetter nutzen
@@ -1393,7 +1700,7 @@ Massnahmen:
 - ReplanningProposal Modell verwenden
 - Frontend-Flow fuer Vorschlag, Vergleich, Annahme und Ablehnung umsetzen
 
-### Phase 6: UI-Verfeinerung
+### Phase 6: UI-Verfeinerung - abgeschlossen
 
 - Dashboard responsiv verfeinern
 - Budgetdarstellung verbessern
@@ -1401,7 +1708,39 @@ Massnahmen:
 - Karte/Routenuebersicht als MVP-1-Schema darstellen
 - Checkliste interaktiv machen
 
-### Phase 7: Demo-Haertung
+### Phase 7: AI Generated Travel Planning
+
+- freie Reiseplanung ueber `POST /api/trips/plan` fachlich ausbauen
+- Coordinator Workflow fuer nutzerdefinierte Ziele und Praeferenzen erweitern
+- strukturierte OpenAI-Ausgaben fuer Planvorschlaege validieren
+- deterministische Services fuer Budget, Mock-Daten und Proposals als Guardrails beibehalten
+- Chat- und Dashboard-Flow fuer echte Reiseanfragen pruefen
+
+### Phase 8: PostgreSQL Integration
+
+- Repository-Schicht fuer Trips, Plans, Proposals und Checklisten einfuehren
+- In-Memory Storage durch PostgreSQL-Persistenz ersetzen
+- Datenmodell fuer Reisehistorie und Planversionen vorbereiten
+- Migrations- und Seed-Konzept fuer Demo-Daten definieren
+- bestehende API-Vertraege moeglichst stabil halten
+
+### Phase 9: Externe APIs
+
+- Wetter API ueber ExternalWeatherProvider integrieren
+- Google Places API fuer Restaurants, Museen und Aktivitaeten anbinden
+- Flugstatus API als spaeteren Replanning-Trigger vorbereiten
+- Fehlerbehandlung, Rate Limits und Fallbacks fuer externe Dienste definieren
+- Mapping zwischen externen Daten und internen Domain Models absichern
+
+### Phase 10: Export & Praesentation
+
+- PDF Export fuer Reiseplaene umsetzen
+- Kalender Export fuer Tagesplan-Zeitfenster vorbereiten
+- Praesentationsvorbereitung fuer Berlin-Demo dokumentieren
+- Demo-Skript mit initialer Planung, Regen an Tag 2 und Accept/Reject-Flow erstellen
+- finale Akzeptanzkriterien gegen UI und API pruefen
+
+### Phase 11: Demo-Haertung
 
 - Demo-Szenario Berlin fest testen
 - Fehler- und Ladezustaende pruefen
