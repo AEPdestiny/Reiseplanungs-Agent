@@ -1,34 +1,47 @@
 # Reiseplanungs-Agent
 
-Ein intelligenter Reiseplanungs-Agent mit GenAI, der eine Reise nicht nur im Chat beschreibt, sondern als strukturiertes Dashboard plant. Der MVP zeigt Tagesplaene, Budget, Checkliste, Agent Insights und einen kontrollierten Replanning-Flow bei Wetteraenderungen.
+Ein intelligenter Reiseplanungs-Agent als dashboard-zentrierte Web-App. Der Prototyp zeigt, wie Reisen strukturiert geplant, begruendet, budgetiert und bei Aenderungen wie schlechtem Wetter kontrolliert umgeplant werden koennen.
 
-Der Prototyp wurde gebaut, um zu demonstrieren, wie ein GenAI-Agent Vorschlaege begruendet, Alternativen anbietet und kritische Planaenderungen erst nach Nutzerbestaetigung uebernimmt.
+MVP 1 ist als interaktive Demo abgeschlossen. Die naechste Projektstrategie setzt auf kostenfreie APIs und regelbasierte Agentenlogik; OpenAI Structured Planning ist technisch vorbereitet, aber fuer MVP 2 kein Pflichtbestandteil.
 
 ## Features
 
-- Reiseplanung fuer ein Demo-Szenario
-- Budgetplanung mit deterministischer Berechnung
+- strukturierte Reiseplanung ueber Dashboard
+- Demo-Reise Berlin
+- freie Reiseanfrage ueber `POST /api/trips/plan`
 - Tagesplaene mit Zeitfenstern
-- Restaurant-, Museums- und Aktivitaetsvorschlaege
-- Agent Insights fuer transparente Agentenschritte
-- Chat mit OpenAI-/Fallback-Antworten
+- Budgetplanung mit deterministischer Berechnung
+- Restaurants, Museen, Sehenswuerdigkeiten und Aktivitaeten
+- Agent Insights fuer nachvollziehbare Agentenschritte
+- Chat mit Fallback-Antworten und optionaler OpenAI-Unterstuetzung
 - Replanning bei Wetteraenderungen
 - Simulation von Regen an Tag 2
 - Proposal Flow mit Accept/Reject
-- OpenAI Responses API Integration
+- schematische Routenuebersicht
+- vorbereitete optionale OpenAI Structured Planning Experimente
+
+## MVP-Struktur
+
+| MVP | Name | Status | Ziel |
+| --- | --- | --- | --- |
+| MVP 1 | Foundation & Interactive Demo | abgeschlossen | Stabile Berlin-Demo mit Dashboard, Budget, Chat, Replanning und Proposal Flow |
+| MVP 2 | Free API Travel Planning | geplant / in Arbeit | Echte Reiseplanung mit kostenfreien Providern und regelbasierter Agentenlogik |
+| MVP 3 | Real World Polish | geplant | Persistenz, bessere Karte, Exporte, Praesentationspolish und produktnaehere Features |
 
 ## Architekturuebersicht
 
 ```text
 Vue 3 Dashboard
-↓
+->
 NestJS Backend
-↓
+->
 Coordinator Agent
-↓
-Specialized Agent Services
-↓
-OpenAI Responses API
+->
+Planning Agent
+->
+Free API Providers + regelbasierte Services
+->
+Recommendation Scoring + BudgetService + Proposal Flow
 ```
 
 ```mermaid
@@ -37,27 +50,54 @@ flowchart TD
   Frontend --> Backend[NestJS Backend API]
   Backend --> Coordinator[Coordinator Agent]
   Coordinator --> Planning[Planning Agent]
-  Coordinator --> Recommendation[Recommendation Agent]
-  Coordinator --> Budget[Budget Agent]
-  Coordinator --> Replanning[Replanning Agent]
-  Coordinator --> Checklist[Checklist Agent]
-  Backend --> OpenAI[OpenAI Responses API]
-  Backend --> MockData[Mock Data Providers]
+  Planning --> Providers[Free API Providers]
+  Providers --> Weather[Open-Meteo Weather]
+  Providers --> Geocoding[Nominatim / OpenStreetMap]
+  Providers --> Places[OpenTripMap POIs]
+  Providers --> Knowledge[Wikidata / Wikipedia]
+  Backend --> Recommendation[Recommendation Scoring]
+  Backend --> Budget[Deterministic BudgetService]
   Backend --> Proposal[Proposal Service]
+  Frontend --> Map[Leaflet + OpenStreetMap]
+  Planning -. optional .-> OpenAI[Optional OpenAI Structured Planning]
 ```
 
-Das Backend ist die Source of Truth fuer Plan, Budget, Proposals und Bestaetigungsstatus. Das Frontend rendert strukturierte Daten und loest Nutzeraktionen aus, trifft aber keine finalen Business-Entscheidungen.
+Das Backend bleibt die Source of Truth fuer Plan, Budget, Proposals und Bestaetigungsstatus. Das Frontend rendert strukturierte Daten und loest Nutzeraktionen aus, trifft aber keine finalen Business-Entscheidungen.
 
 ## Agentenarchitektur
 
 | Agent | Verantwortung |
 | --- | --- |
-| Coordinator Agent | Routet Nutzeranfragen, koordiniert Spezialagenten, fuehrt Ergebnisse zusammen und entscheidet, wann Nutzerbestaetigung erforderlich ist. |
-| Planning Agent | Erstellt Tagesstruktur, Zeitfenster und sinnvolle Reihenfolgen im Reiseplan. |
-| Recommendation Agent | Waehlt Restaurants, Museen, Sehenswuerdigkeiten und Aktivitaeten aus und bewertet Alternativen. |
-| Budget Agent | Prueft Budgetdaten und liefert Budgethinweise; die finale Berechnung bleibt deterministisch im BudgetService. |
-| Replanning Agent | Reagiert auf Wetteraenderungen, erkennt betroffene Outdoor-Aktivitaeten und erstellt Aenderungsvorschlaege. |
+| Coordinator Agent | Routet Nutzeranfragen, koordiniert Spezialagenten, fuehrt Ergebnisse zusammen und schuetzt kritische Aenderungen durch Nutzerbestaetigung. |
+| Planning Agent | Erstellt Tagesstruktur und orchestriert die Planerzeugung. Fuer MVP 2 soll der Standardpfad ueber Free APIs und regelbasierte Logik laufen. |
+| Recommendation Agent | Bewertet Restaurants, Museen, Sehenswuerdigkeiten und Aktivitaeten anhand von Interessen, Wetter, Budget und Lage. |
+| Budget Agent / BudgetService | Prueft und berechnet Budgetdaten deterministisch. Finale Budgetwerte kommen nicht vom LLM und nicht aus dem Frontend. |
+| Replanning Agent | Reagiert auf Wetteraenderungen, erkennt betroffene Outdoor-Aktivitaeten und erzeugt Aenderungsvorschlaege. |
 | Checklist Agent | Erstellt Packliste, Dokumentenliste und einfache Reisevorbereitungen. |
+
+## OpenAI Einordnung
+
+OpenAI ist technisch im Backend vorbereitet:
+
+- `OpenAiService` kapselt OpenAI Responses API Aufrufe und bietet Fallbacks.
+- `OpenAiPlanningService` kann strukturierte Planvorschlaege anfragen.
+- `StructuredPlanNormalizer` validiert und normalisiert optionale OpenAI-Ausgaben.
+- `TripPlanFactory` bleibt Mock-/Fallback-Planerzeugung.
+
+Fuer die kostenfreie MVP-2-Zielarchitektur ist OpenAI kein Pflichtbestandteil. OpenAI bleibt optional fuer Chat, Begruendungen, Textveredelung und experimentelle AI Structured Planning Pfade. Der Standardpfad fuer echte Reiseplanung soll ueber kostenfreie Provider und regelbasierte Agentenlogik laufen.
+
+## Free API Provider
+
+| Bereich | Provider | Rolle |
+| --- | --- | --- |
+| Wetter | Open-Meteo | Wetterdaten fuer Reiseplanung und Replanning |
+| Geocoding | Nominatim / OpenStreetMap | Zielort, Koordinaten und Ortsaufloesung |
+| POIs | OpenTripMap | Sehenswuerdigkeiten, Museen, Aktivitaeten und Orte |
+| Wissen | Wikidata / Wikipedia | Ergaenzende Ortsinformationen, Beschreibungen und Plausibilisierung |
+| Karte | Leaflet + OpenStreetMap | Kartenansicht im Frontend |
+| Routing | OSRM | Optional fuer Routen; Demo Server nur fuer nicht-produktive Tests, spaeter selbst hostbar |
+
+Provider sollen ueber klare Interfaces angebunden werden, damit Mock-Daten, Free APIs und spaetere produktive Provider austauschbar bleiben.
 
 ## Tech Stack
 
@@ -68,11 +108,13 @@ Das Backend ist die Source of Truth fuer Plan, Budget, Proposals und Bestaetigun
 | Routing | Vue Router |
 | Backend | NestJS |
 | Sprache | TypeScript |
-| LLM | OpenAI Responses API |
-| Datenbank MVP 1 | In-Memory |
-| Datenbank MVP 2 | PostgreSQL |
-| Build Tool | Vite |
 | Monorepo | npm Workspaces |
+| Build Tool | Vite |
+| Datenhaltung MVP 1 | In-Memory |
+| Planung MVP 2 | Free APIs + regelbasierte Agentenlogik |
+| Optionales LLM | OpenAI Responses API |
+| Datenbank MVP 3 | PostgreSQL |
+| Karte | Leaflet + OpenStreetMap |
 
 ## Projektstruktur
 
@@ -86,13 +128,6 @@ travel-agent/
 |   |-- vite.config.ts
 |   `-- src/
 |       |-- components/
-|       |   |-- dashboard/
-|       |   |-- chat/
-|       |   |-- trip/
-|       |   |-- budget/
-|       |   |-- checklist/
-|       |   |-- agent-insights/
-|       |   `-- replanning/
 |       |-- views/
 |       |-- stores/
 |       |-- services/
@@ -119,12 +154,6 @@ travel-agent/
 |       |-- contracts/
 |       `-- constants/
 `-- docs/
-    |-- architecture.md
-    |-- api-contracts.md
-    |-- domain-model.md
-    |-- sequence-diagrams.md
-    |-- project-structure.md
-    `-- design-system.md
 ```
 
 ## Quick Start
@@ -176,7 +205,7 @@ Der Tagesplan zeigt Zeitfenster, Aktivitaeten, Orte, Kategorien, Kosten, Indoor/
 
 ### 3. Chatfrage stellen
 
-Im Chat kann eine Frage zum Plan gestellt werden, zum Beispiel warum eine Aktivitaet ausgewaehlt wurde. Die Antwort kommt ueber den Coordinator Agent und die OpenAI-/Fallback-Integration.
+Im Chat kann eine Frage zum Plan gestellt werden. Ohne API-Key nutzt das Backend eine Fallback-Antwort; mit OpenAI-Key kann optional eine assistierende Antwort erzeugt werden.
 
 ### 4. Regen an Tag 2 simulieren
 
@@ -222,6 +251,7 @@ _Bild folgt_
 | --- | --- |
 | `GET /api/health` | Prueft, ob das Backend erreichbar ist. |
 | `POST /api/trips/demo` | Laedt die feste Berlin-Demo-Reise fuer MVP 1. |
+| `POST /api/trips/plan` | Erstellt einen initialen Plan aus einer Nutzeranfrage; aktuell mit optionalem OpenAI Structured Planning und Mock-Fallback. |
 | `GET /api/trips/:tripId` | Liefert den aktuellen Trip-Zustand mit aktivem Plan, Budget, Checkliste und pending Proposal. |
 | `POST /api/trips/:tripId/chat` | Sendet eine Chat-Nachricht an den Coordinator Agent und liefert Antwort, Plan, Proposal-Status und Agent Insights. |
 | `POST /api/trips/:tripId/simulate-weather` | Simuliert ein Wetterereignis und erzeugt bei Bedarf ein pending Replanning Proposal. |
@@ -232,32 +262,44 @@ _Bild folgt_
 
 | Feature | Status |
 | --- | --- |
-| Dashboard | ✅ |
-| Chat | ✅ |
-| Budget | ✅ |
-| Proposal Flow | ✅ |
-| Wettersimulation | ✅ |
-| OpenAI Integration | ✅ |
-| AI Generated Travel Planning | ⏳ |
-| PostgreSQL | ⏳ |
-| Externe APIs | ⏳ |
+| MVP 1 Foundation & Interactive Demo | abgeschlossen |
+| Dashboard | abgeschlossen |
+| Chat | abgeschlossen |
+| Budget | abgeschlossen |
+| Proposal Flow | abgeschlossen |
+| Wettersimulation | abgeschlossen |
+| `POST /api/trips/plan` | vorbereitet |
+| OpenAI Structured Planning | optional vorbereitet |
+| Free API Travel Planning | geplant / in Arbeit |
+| PostgreSQL | geplant fuer MVP 3 |
+| Free APIs | geplant fuer MVP 2 |
 
 ## Roadmap
 
-- Phase 7 - AI Generated Travel Planning
-- Phase 8 - PostgreSQL
-- Phase 9 - Externe APIs
-- Phase 10 - Export & Praesentation
+- Phase 1 - Foundation & Monorepo: abgeschlossen
+- Phase 2 - Backend Demo Flow: abgeschlossen
+- Phase 3 - Deterministischer Replanning Flow: abgeschlossen
+- Phase 4 - Optionale OpenAI Integration: abgeschlossen / optional
+- Phase 5 - Dashboard MVP: abgeschlossen
+- Phase 6 - Freie Reiseanfrage mit Mock-/OpenAI-Fallback: vorbereitet
+- Phase 7 - Dokumentation auf kostenfreie MVP-2-Architektur ausrichten
+- Phase 8 - Free API Provider Interfaces und Open-Meteo integrieren
+- Phase 9 - Nominatim / OpenStreetMap Geocoding integrieren
+- Phase 10 - POI Provider mit OpenTripMap und Wikidata/Wikipedia integrieren
+- Phase 11 - Leaflet + OpenStreetMap Kartenansicht ausbauen
+- Phase 12 - Real World Polish: PostgreSQL, Exporte, Praesentationspolish
 
 ## Architekturentscheidungen
 
 Die wichtigsten Architekturentscheidungen sind in [spec_travel_agent.md](./spec_travel_agent.md) dokumentiert, insbesondere:
 
 - eigene NestJS-Orchestrierung statt LangChain/LangGraph
-- Mock-Daten vor echten APIs
+- Mock-Daten als stabile MVP-1-Demo-Basis
 - dashboard-zentrierte UI statt Chat-only UI
 - proposal-basierter Replanning-Flow
 - deterministische Budgetberechnung statt LLM-basierter Budgetlogik
+- Free APIs + regelbasierte Agentenlogik vor kostenpflichtiger LLM-Planung
+- OpenAI nur als optionaler Bonus, nicht als Pflichtpfad
 
 ## Weitere Dokumentation
 

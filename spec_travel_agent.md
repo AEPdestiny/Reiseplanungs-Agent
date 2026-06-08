@@ -1,40 +1,41 @@
 # Reiseplanungs-Agent
 
-Version: MVP 1
+Version: MVP 2 Strategy Update
 Status: Active Development
-Letzte Aktualisierung: 2026-06-02
+Letzte Aktualisierung: 2026-06-08
 
 ## Projektstatus
 
 | Bereich | Status |
 | --- | --- |
-| Architektur | ✅ |
-| Backend | ✅ |
-| Replanning | ✅ |
-| OpenAI Integration | ✅ |
-| Dashboard MVP | ✅ |
-| Echte Reiseplanung | ⏳ |
-| Externe APIs | ⏳ |
-| PostgreSQL | ⏳ |
+| Architektur | abgeschlossen / wird fuer MVP 2 aktualisiert |
+| Backend | abgeschlossen fuer MVP 1 |
+| Replanning | abgeschlossen |
+| OpenAI Integration | optional vorbereitet |
+| Dashboard MVP | abgeschlossen |
+| Free API Travel Planning | geplant / in Arbeit |
+| Externe APIs | geplant fuer MVP 2 |
+| PostgreSQL | geplant fuer MVP 3 |
 
 ## MVP-1 Fortschritt
 
 | Feature | Status |
 | --- | --- |
-| Demo-Reise | ✅ |
-| Dashboard | ✅ |
-| Chat | ✅ |
-| Budget | ✅ |
-| Checkliste | ✅ |
-| Agent Insights | ✅ |
-| Proposal Flow | ✅ |
-| Wettersimulation | ✅ |
-| OpenAI Integration | ✅ |
-| AI Generated Travel Planning | ⏳ |
-| PostgreSQL | ⏳ |
-| Externe APIs | ⏳ |
-| PDF Export | ⏳ |
-| Kalender Export | ⏳ |
+| Demo-Reise | abgeschlossen |
+| Dashboard | abgeschlossen |
+| Chat | abgeschlossen |
+| Budget | abgeschlossen |
+| Checkliste | abgeschlossen |
+| Agent Insights | abgeschlossen |
+| Proposal Flow | abgeschlossen |
+| Wettersimulation | abgeschlossen |
+| `POST /api/trips/plan` | vorbereitet |
+| OpenAI Structured Planning | optional vorbereitet |
+| Free API Travel Planning | geplant / in Arbeit |
+| PostgreSQL | geplant |
+| Externe APIs | geplant |
+| PDF Export | geplant |
+| Kalender Export | geplant |
 
 ## Inhaltsverzeichnis
 
@@ -69,33 +70,42 @@ Letzte Aktualisierung: 2026-06-02
 - [Offene Fragen](#offene-fragen)
 - [24. Implementierungs-Roadmap](#24-implementierungs-roadmap)
 
-# Technische Spezifikation: Intelligenter Reiseplanungs-Agent mit GenAI
+# Technische Spezifikation: Intelligenter Reiseplanungs-Agent
+
+GenAI-/LLM-Funktionen sind optional vorbereitet. Der MVP-2-Standardpfad basiert auf kostenfreien APIs und regelbasierter Agentenlogik.
 
 ## 1. Projektuebersicht
 
-Das Projekt ist eine Web-App fuer intelligente Reiseplanung mit einem GenAI-Agenten. Die Anwendung soll zeigen, wie ein Agent eine Reise strukturiert plant, Vorschlaege begruendet, Alternativen anbietet und auf Aenderungen reagieren kann.
+Das Projekt ist eine Web-App fuer intelligente Reiseplanung mit agentischer Backend-Orchestrierung. Die Anwendung soll zeigen, wie ein Agent eine Reise strukturiert plant, Vorschlaege begruendet, Alternativen anbietet und auf Aenderungen reagieren kann.
 
 Die Anwendung ist dashboard-zentriert. Der Chat ist ein wichtiger Interaktionskanal, aber nicht die gesamte UI. Nutzer sollen Reiseinformationen sowohl dialogisch als auch visuell ueber Tagesplan, Budget, Karte/Routenuebersicht und Checkliste verstehen und steuern koennen.
+
+MVP 1 ist als Foundation & Interactive Demo umgesetzt. Fuer MVP 2 wird die Strategie auf Free API Travel Planning umgestellt: echte Reiseplanung soll ueber kostenfreie Provider und regelbasierte Agentenlogik funktionieren. OpenAI Structured Planning ist technisch vorbereitet, wird aber nicht als Pflichtbestandteil behandelt.
 
 Der Prototyp besteht aus:
 
 - Vue 3 Frontend mit TypeScript, Pinia und Vue Router
 - NestJS Backend mit TypeScript
-- OpenAI Responses API mit dem Modell `gpt-5` fuer MVP 1
 - eigener Agenten-Orchestrierung im Backend
-- Mock-Daten fuer MVP 1
-- spaeterer Erweiterbarkeit fuer PostgreSQL und externe APIs
+- Mock-Daten und In-Memory Storage fuer MVP 1
+- `POST /api/trips/plan` fuer freie Reiseanfragen
+- optionaler OpenAI Responses API Integration fuer Chat, Begruendungen, Textveredelung und AI Structured Planning Experimente
+- spaeterer Erweiterbarkeit fuer Free API Provider, PostgreSQL und Exportfunktionen
 
-### Tech-Stack MVP 1
+### Tech-Stack MVP 1 / MVP 2
 
 | Bereich | Technologie | Entscheidung |
 | --- | --- | --- |
 | Frontend | Vue 3, TypeScript, Pinia, Vue Router | Dashboard-zentrierte Web-App |
 | Backend | Node.js, NestJS, TypeScript | REST API und eigene Agenten-Orchestrierung |
-| Agent / LLM | OpenAI Responses API, `gpt-5` | Strukturierte Outputs fuer Empfehlungen, Begruendungen und Vorschlaege |
-| Agent Framework | Keines | Kein LangChain, kein LangGraph |
-| Daten | Mock-Daten | PostgreSQL erst ab MVP 2 |
-| Wetter | `MockWeatherProvider` | Echte Wetter-API erst ab MVP 2 |
+| Agentenlogik | NestJS Services, regelbasierte Orchestrierung | Kein LangChain, kein LangGraph |
+| Daten MVP 1 | Mock-Daten, In-Memory Storage | stabile interaktive Demo |
+| Planung MVP 2 | Free APIs + regelbasierte Agentenlogik | kostenfreie Standardarchitektur |
+| Wetter MVP 2 | Open-Meteo | kostenfreier Wetterprovider |
+| Geocoding MVP 2 | Nominatim / OpenStreetMap | Zielort- und Koordinatenauflösung |
+| POIs MVP 2 | OpenTripMap, Wikidata, Wikipedia | Orte, Wissen und POI-Ergaenzungen |
+| Karte MVP 2 | Leaflet + OpenStreetMap | kostenfreie Kartenansicht |
+| Optionales LLM | OpenAI Responses API | optionaler Bonus, kein Pflichtpfad |
 
 ## 2. Ziel des Prototyps
 
@@ -118,17 +128,17 @@ Nicht Ziel des Prototyps ist eine produktionsreife Reisebuchungsplattform. MVP 1
 
 ## 3. MVP-Abgrenzung
 
-### MVP 1
+### MVP 1: Foundation & Interactive Demo
 
-MVP 1 ist ein demo-faehiger Kernprototyp mit Mock-Daten.
+MVP 1 ist ein demo-faehiger Kernprototyp mit Mock-Daten und interaktivem Dashboard. Status: abgeschlossen.
 
 Enthalten:
 
 - Vue 3 Dashboard
 - NestJS Backend
-- OpenAI API Integration ueber Responses API
-- verbindliche Nutzung von `gpt-5` fuer MVP 1
 - eigene Agenten-Orchestrierung ohne LangChain und ohne LangGraph
+- `POST /api/trips/demo` fuer die feste Berlin-Demo
+- `POST /api/trips/plan` fuer freie Reiseanfragen mit optionalem OpenAI Structured Planning und Mock-Fallback
 - Reiseplanung nach Budget
 - Tagesplaene fuer mehrere Tage
 - Restaurant-, Museums- und Aktivitaetsvorschlaege mit Mock-Daten
@@ -142,35 +152,43 @@ Enthalten:
 - Agent Insights Panel zur sichtbaren Darstellung der Agentenschritte
 - feste Demo-Reise per Button "Demo-Reise laden"
 - Demo-Aktion per Button "Regen an Tag 2 simulieren"
+- optionale OpenAI Integration fuer Chat, Begruendungen und AI Structured Planning Experimente
 
-### MVP 2
+### MVP 2: Free API Travel Planning
 
-MVP 2 macht die Anwendung realistischer und persistenter.
+MVP 2 macht die Anwendung realistischer, ohne kostenpflichtige APIs oder verpflichtende LLM-Nutzung vorauszusetzen.
+
+Geplant:
+
+- OpenMeteoWeatherProvider fuer echte Wetterdaten
+- NominatimGeocodingProvider fuer Zielort- und Koordinatenauflösung auf Basis von OpenStreetMap
+- OpenTripMapPlacesProvider fuer POIs, Sehenswuerdigkeiten und Aktivitaeten
+- Wikidata / Wikipedia Provider fuer Wissen, Beschreibungen und POI-Ergaenzungen
+- Leaflet + OpenStreetMap fuer eine echte Kartenansicht im Frontend
+- optional OSRM fuer Routing; Demo Server nur fuer nicht-produktive Tests, spaeter selbst hostbar
+- regelbasierter PlanningAgent als Standardpfad
+- Recommendation Scoring mit Interessen, Wetter, Budget, Kategorie und Lage
+- Free API Provider Interfaces als austauschbare Backend-Abstraktionen
+- OpenAI bleibt optionaler Bonus, nicht Source of Truth
+
+### MVP 3: Real World Polish
+
+MVP 3 erweitert das Produkt um Persistenz, Export und Praesentationsreife.
 
 Geplant:
 
 - PostgreSQL
 - Speicherung von Reisen
-- echte Wetter-API
-- Google Places API
-- echte Oeffnungszeiten
-- Standortdaten
 - Nutzerpraeferenzen
-
-### MVP 3
-
-MVP 3 erweitert das Produkt um Komfort- und Produktivfeatures.
-
-Geplant:
-
-- Karten-/Routenansicht mit echten Routen
+- Karten-/Routenansicht verfeinern
 - PDF-Export
 - Kalender-Export
-- Flugstatus-API
-- Hotel-/Preis-Daten
+- Flugstatus-API als optionaler spaeterer Replanning-Trigger
+- Hotel-/Preis-Daten als optionaler spaeterer Datenbereich
 - Benutzerkonten
 - Reisehistorie
 - Versionierung von Planaenderungen
+- Praesentationspolish
 
 ## 4. Zielgruppe
 
@@ -399,33 +417,35 @@ Erwarteter Neuplanungsablauf:
 
 ### Ueberblick
 
-Die Anwendung besteht aus drei Hauptschichten:
+Die Anwendung besteht aus vier Hauptschichten:
 
 - Frontend: Vue Dashboard und UI-State
-- Backend: REST API, Agenten-Orchestrierung und Mock-Datenzugriff
-- LLM-Schicht: OpenAI Responses API fuer strukturierte GenAI-Ausgaben
+- Backend: REST API, Agenten-Orchestrierung und Source of Truth fuer Plan, Budget und Proposals
+- Provider-Schicht: Mock-Daten in MVP 1, Free API Provider in MVP 2
+- Optionale LLM-Schicht: OpenAI Responses API fuer Chat, Begruendungen, Textveredelung und experimentelle strukturierte Planung
 
 ### Architekturprinzipien
 
 - Frontend rendert strukturierte Daten und trifft keine agentischen Kernentscheidungen.
 - Backend ist Source of Truth fuer Plan, Budget, Vorschlaege und Bestaetigungsstatus.
 - Agenten-Orchestrierung bleibt im NestJS Backend.
-- LLM-Ausgaben werden validiert, bevor sie an das Frontend gehen.
-- Fuer MVP 1 wird das OpenAI Modell `gpt-5` verwendet.
-- Das LLM generiert Empfehlungen, Begruendungen und strukturierte Vorschlaege.
+- Free APIs und regelbasierte Agentenlogik sind der priorisierte MVP-2-Standardpfad.
+- OpenAI Structured Planning ist technisch vorbereitet, wird aber als optionaler Bonus behandelt.
+- Optionale LLM-Ausgaben werden validiert und normalisiert, bevor sie an das Frontend gehen.
 - Budgetberechnung bleibt deterministisch im Backend.
-- Mock-Daten werden so modelliert, dass spaeter echte APIs und PostgreSQL anschliessbar sind.
+- Mock-Daten werden so modelliert, dass spaeter Free APIs und PostgreSQL anschliessbar sind.
+- Kritische Planaenderungen laufen weiterhin ueber den Proposal Flow.
 
 ### Datenfluss
 
 1. Frontend sendet Reiseanfrage an Backend.
 2. Backend erstellt eine Planungs-Session.
 3. Coordinator Agent orchestriert Spezialagenten.
-4. Spezialagenten nutzen Mock-Daten und bei Bedarf OpenAI Responses API.
+4. Planning Agent nutzt je nach verfuegbarem Pfad Mock-Daten, Free API Provider oder optional OpenAI Structured Planning.
 5. Backend validiert und normalisiert das Ergebnis.
-6. Frontend speichert UI-relevanten Zustand in Pinia.
-7. Nutzerinteraktionen wie Bestaetigung oder Ablehnung gehen zurueck ans Backend.
-
+6. BudgetService berechnet die finalen Budgetwerte deterministisch.
+7. Frontend speichert UI-relevanten Zustand in Pinia.
+8. Nutzerinteraktionen wie Bestaetigung oder Ablehnung gehen zurueck ans Backend.
 ## 10. Frontend-Architektur
 
 ### Frameworks
@@ -540,6 +560,9 @@ Die Anwendung besteht aus drei Hauptschichten:
 
 - `TravelModule`
   - REST-Endpunkte fuer Reiseplanung und Planabruf
+  - `POST /api/trips/demo`
+  - `POST /api/trips/plan`
+  - Replanning-, Chat- und Proposal-Endpunkte
 
 - `AgentModule`
   - Coordinator Agent
@@ -548,15 +571,17 @@ Die Anwendung besteht aus drei Hauptschichten:
 
 - `OpenAiModule`
   - Kapselung der OpenAI Responses API
-  - Prompt- und Response-Schema-Verwaltung
+  - optionaler Bonuspfad fuer Chat, Begruendungen und AI Structured Planning Experimente
+  - kein Pflichtbestandteil fuer MVP 2
 
 - `MockDataModule`
   - Zugriff auf Mock-Aktivitaeten, Restaurants, Museen, Wetterdaten und Kosten
+  - bleibt MVP-1-Demo- und Fallback-Basis
 
 - `WeatherModule`
   - definiert das Weather Provider Interface
   - nutzt in MVP 1 `MockWeatherProvider`
-  - bereitet MVP 2 fuer `ExternalWeatherProvider` vor
+  - soll in MVP 2 um `OpenMeteoWeatherProvider` erweitert werden
 
 - `BudgetModule`
   - deterministische Budgetberechnung
@@ -570,17 +595,37 @@ Die Anwendung besteht aus drei Hauptschichten:
 
 - `TravelService`
   - erstellt und verwaltet Reise-Sessions
-  - aggregiert Agentenergebnisse
+  - validiert Reiseanfragen
+  - ruft PlanningAgentService auf
+  - berechnet finales Budget ueber BudgetService
+  - speichert Trips im In-Memory Store
+
+- `PlanningAgentService`
+  - orchestriert initiale Planung
+  - nutzt Wetterdaten
+  - versucht aktuell optional OpenAI Structured Planning
+  - nutzt TripPlanFactory als Mock-/Fallback-Pfad
+  - soll in MVP 2 Free API Provider als priorisierten Standardpfad nutzen
+
+- `TripPlanFactory`
+  - erzeugt Mock-/Fallback-Plaene
+  - bleibt bewusst Mock-/Fallback-orientiert
+
+- `OpenAiPlanningService`
+  - erzeugt optionale strukturierte Planvorschlaege ueber OpenAI
+  - ist nicht der Pflichtpfad fuer MVP 2
+
+- `StructuredPlanNormalizer`
+  - validiert und normalisiert optionale OpenAI-Ausgaben
+  - dient als Guardrail, falls OpenAI Structured Planning genutzt wird
 
 - `AgentOrchestratorService`
   - fuehrt Coordinator Workflow aus
   - ruft Spezialagenten in definierter Reihenfolge auf
 
 - `OpenAiService`
-  - kapselt API-Aufrufe
-  - verwendet fuer MVP 1 verbindlich das Modell `gpt-5`
-  - erzwingt strukturierte Ausgabeformate
-  - behandelt Fehler, Timeouts und Fallbacks
+  - kapselt optionale OpenAI API-Aufrufe
+  - behandelt fehlenden API-Key, Fehler, Timeouts und Fallbacks
 
 - `MockDataService`
   - liefert Mock-Entitaeten
@@ -589,11 +634,12 @@ Die Anwendung besteht aus drei Hauptschichten:
 - `WeatherProvider`
   - abstrahiert Wetterdaten und Wettersimulation
   - MVP 1: `MockWeatherProvider`
-  - MVP 2: `ExternalWeatherProvider`
+  - MVP 2: `OpenMeteoWeatherProvider`
 
 - `BudgetService`
   - berechnet Kosten
   - erkennt Budgetueberschreitungen
+  - bleibt Source of Truth fuer aggregierte Budgetwerte
 
 - `ProposalService`
   - erzeugt pending proposals
@@ -601,9 +647,11 @@ Die Anwendung besteht aus drei Hauptschichten:
 
 ### Backend-Prinzipien
 
-- LLMs generieren Empfehlungen und Begruendungen, aber Budgetberechnung erfolgt deterministisch.
+- Free APIs + regelbasierte Agentenlogik sind der priorisierte MVP-2-Pfad.
+- OpenAI darf erklaeren, formulieren oder experimentell strukturierte Vorschlaege liefern, ist aber keine Pflichtabhaengigkeit.
+- Budgetberechnung erfolgt deterministisch.
 - Kritische Zustandsaenderungen benoetigen explizite API-Aktion.
-- Externe API-Adapter werden spaeter hinter klaren Interfaces ergaenzt.
+- Externe API-Adapter werden hinter klaren Provider Interfaces ergaenzt.
 - Responses werden serverseitig validiert und normalisiert.
 - Das Weather Provider Interface wird bereits in MVP 1 eingefuehrt, obwohl nur Mock-Wetter genutzt wird.
 
@@ -625,20 +673,22 @@ MockWeatherProvider
 Fuer MVP 2:
 
 ```ts
-ExternalWeatherProvider
+OpenMeteoWeatherProvider
 ```
-
 ## 12. Agentenarchitektur
 
-Die Agentenarchitektur besteht aus einem Coordinator Agent und mehreren spezialisierten Agenten. Es wird keine externe Agentenframework-Bibliothek wie LangChain oder LangGraph verwendet. Fuer MVP 1 wird das Modell `gpt-5` ueber die OpenAI Responses API genutzt.
+Die Agentenarchitektur besteht aus einem Coordinator Agent und mehreren spezialisierten Agenten. Es wird keine externe Agentenframework-Bibliothek wie LangChain oder LangGraph verwendet.
+
+Fuer MVP 2 soll der Standardpfad ueber Free APIs und regelbasierte Agentenlogik laufen. OpenAI Structured Planning ist technisch vorbereitet, wird aber nur als optionaler Bonus behandelt.
 
 Wichtige Regeln:
 
-- Das LLM generiert Empfehlungen, Begruendungen und strukturierte Vorschlaege.
+- Free API Provider liefern Wetter, Geocoding, Orte, Karten- und Wissensdaten.
+- Regelbasierte Services bewerten und strukturieren die Daten.
+- OpenAI darf optional Chatantworten, Begruendungen, Textveredelung oder experimentelle strukturierte Planvorschlaege liefern.
 - Budgetberechnung bleibt deterministisch im Backend.
 - Kritische Zustandsaenderungen brauchen Nutzerbestaetigung.
 - Agentenschritte werden als Agent Trace erfasst und im AgentInsightsPanel sichtbar gemacht.
-
 ### Coordinator Agent
 
 Verantwortlich fuer:
@@ -793,9 +843,9 @@ Beispielhafte Anzeige:
 - Replanning Agent: Wetteraenderung verarbeitet
 - Checklist Agent: Checkliste erstellt
 
-### Strukturierte LLM-Ausgaben
+### Optionale strukturierte LLM-Ausgaben
 
-OpenAI Responses API soll mit `gpt-5` so genutzt werden, dass Antworten in validierbaren Strukturen zurueckkommen. Freitext darf fuer Chatnachrichten und Begruendungen genutzt werden, aber UI-kritische Daten muessen als strukturierte Objekte vorliegen.
+OpenAI Structured Planning ist technisch vorbereitet, wird aber fuer die kostenfreie MVP-2-Zielarchitektur als optionaler Bonus behandelt. Wenn OpenAI genutzt wird, muessen Antworten in validierbaren Strukturen zurueckkommen und durch `StructuredPlanNormalizer` geprueft werden. Freitext darf fuer Chatnachrichten, Begruendungen und Textveredelung genutzt werden; UI-kritische Daten muessen weiterhin als strukturierte Objekte vorliegen.
 
 ## 14. Datenmodelle
 
@@ -1159,7 +1209,7 @@ Der `MockWeatherProvider` soll reproduzierbar arbeiten, damit die Demo stabil bl
 
 ### Spaetere Austauschbarkeit
 
-Mock-Daten sollen ueber ein Repository- oder Provider-Interface bereitgestellt werden. In MVP 2 koennen diese Provider durch PostgreSQL und externe API-Adapter ersetzt oder ergaenzt werden.
+Mock-Daten sollen ueber ein Repository- oder Provider-Interface bereitgestellt werden. In MVP 2 koennen Mock-Provider durch Free-API-Provider ergaenzt oder ersetzt werden. PostgreSQL und Persistenz sind fuer MVP 3 vorgesehen.
 
 ## 17. Replanning-Logik
 
@@ -1253,11 +1303,13 @@ Relevante Aenderungen:
 
 - Validierung aller Requests
 - strukturierte Fehlerantworten
-- Timeout-Behandlung fuer OpenAI API
-- Fallback auf deterministische Mock-Planung, falls LLM-Aufruf fehlschlaegt
+- Timeout-Behandlung fuer optionale externe Provider und optionale Assistenz-/Experimentierpfade
+- Fallback auf Free-API- oder deterministische Mock-Planung, falls optionale LLM-Aufrufe fehlschlagen
 - Logging der Agenten-Schritte
 
-### LLM-spezifische Fehler
+### Optionale LLM-spezifische Fehler
+
+OpenAI-/LLM-Fehler betreffen optionale Assistenz-, Begruendungs- und Experimentierpfade. Der kostenfreie Standardpfad muss ohne LLM funktionieren; bei LLM-Ausfall bleibt der Free-API- oder Mock-Fallback nutzbar.
 
 Moegliche Fehler:
 
@@ -1265,7 +1317,7 @@ Moegliche Fehler:
 - nicht validierbare Daten
 - Timeout
 - zu hohe Kosten oder falsche Summen
-- Empfehlung ausserhalb der Mock-Daten
+- Empfehlung ausserhalb der verfuegbaren Free-API- oder Mock-Daten
 
 Behandlung:
 
@@ -1277,33 +1329,41 @@ Behandlung:
 
 ## 20. Erweiterbarkeit fuer MVP 2 und MVP 3
 
-### MVP 2
+### MVP 2: Free API Travel Planning
+
+Erweiterungspunkte:
+
+- Free API Provider Interfaces fuer Wetter, Geocoding, Places, Wissen, Karten und optional Routing
+- `OpenMeteoWeatherProvider` fuer echte Wetterdaten
+- `NominatimGeocodingProvider` fuer Zielort- und Koordinatenauflösung
+- `OpenTripMapPlacesProvider` fuer Sehenswuerdigkeiten, Museen, Aktivitaeten und POIs
+- optionaler `WikidataPlacesProvider` oder Knowledge Provider fuer Beschreibungen und POI-Ergaenzungen
+- Leaflet + OpenStreetMap fuer echte Kartenansicht
+- optional OSRM fuer Routing; Demo Server nur fuer nicht-produktive Tests, spaeter selbst hostbar
+- regelbasierter PlanningAgent als Standardpfad
+- Recommendation Scoring anhand Interessen, Wetter, Budget, Kategorie und Lage
+- Location-Daten mit Koordinaten
+- Oeffnungszeiten und Verfuegbarkeit, sofern Providerdaten dies liefern
+- OpenAI bleibt optionaler Bonus, nicht Pflichtpfad
+
+### MVP 3: Real World Polish
 
 Erweiterungspunkte:
 
 - PostgreSQL ueber Repository-Schicht
 - Persistenz fuer Trips, Plans, Proposals, Checklist Items und User Preferences
-- Austausch von `MockWeatherProvider` durch `ExternalWeatherProvider` fuer echte Wetter-API
-- Places Provider Interface fuer Google Places API
-- Location-Daten mit Koordinaten
-- Oeffnungszeiten und Verfuegbarkeit
-
-### MVP 3
-
-Erweiterungspunkte:
-
-- Map Provider fuer echte Karten- und Routenansicht
+- Map Provider fuer verfeinerte Karten- und Routenansicht
 - Export Services fuer PDF und Kalender
 - Flight Status Provider
 - Hotel und Preis Provider
 - Auth Module fuer Benutzerkonten
 - History Module fuer Reisehistorie
 - Versioning Module fuer Planversionen und Aenderungsvergleich
+- Praesentationspolish
 
 ### Architekturvorgabe
 
-Provider und Repositories sollen in MVP 1 schon so benannt und geschnitten werden, dass spaetere Austauschbarkeit moeglich ist, ohne die UI oder Agentenlogik gross umzubauen.
-
+Provider und Repositories sollen so benannt und geschnitten werden, dass Mock-Daten, Free API Adapter, optionale OpenAI-Pfade und spaetere Persistenz austauschbar bleiben, ohne die UI oder Agentenlogik gross umzubauen.
 ## 21. Nicht-Ziele fuer MVP 1
 
 MVP 1 soll bewusst schlank bleiben.
@@ -1334,16 +1394,16 @@ Nicht enthalten:
 
 Risiko:
 
-- LLM kann unstrukturierte, falsche oder inkonsistente Daten erzeugen.
+- Optionale LLM-Ausgaben koennen unstrukturierte, falsche oder inkonsistente Daten erzeugen.
 
 Massnahmen:
 
-- strukturierte Responses
-- fuer MVP 1 verbindlich `gpt-5` ueber OpenAI Responses API
-- serverseitige Validierung
-- deterministische Budgetberechnung
-- Mock-Daten als harte Quelle fuer MVP 1
-- kritische Zustandsaenderungen nur nach Nutzerbestaetigung
+- OpenAI ist kein Pflichtbestandteil fuer MVP 2.
+- optionale OpenAI Structured Planning Antworten werden serverseitig validiert und normalisiert.
+- `StructuredPlanNormalizer` dient als Guardrail.
+- deterministische Budgetberechnung bleibt im `BudgetService`.
+- Mock-Daten und Free API Provider bleiben kontrollierbare Standard- bzw. Fallback-Quellen.
+- kritische Zustandsaenderungen erfolgen nur nach Nutzerbestaetigung.
 
 ### Scope Creep
 
@@ -1353,9 +1413,10 @@ Risiko:
 
 Massnahmen:
 
-- MVP 1 strikt auf Demo-Szenario und Kernfunktionen begrenzen
-- externe APIs erst ab MVP 2
-- Kartenfunktion in MVP 1 nur schematisch
+- MVP 1 strikt auf Demo-Szenario und Kernfunktionen begrenzen.
+- MVP 2 auf Free API Travel Planning fokussieren.
+- PostgreSQL, Exporte und produktnahe Komfortfeatures auf MVP 3 verschieben.
+- Kartenfunktion in MVP 1 nur schematisch halten.
 
 ### UI-Ueberladung
 
@@ -1373,40 +1434,31 @@ Massnahmen:
 
 Risiko:
 
-- LLM-Aufrufe koennen langsam oder teuer werden.
+- LLM-Aufrufe und externe API-Aufrufe koennen langsam sein oder Kosten- bzw. Rate-Limit-Risiken erzeugen.
 
 Massnahmen:
 
-- wenige orchestrierte Aufrufe
-- Mock-Datenfilterung vor LLM-Aufruf
-- kurze strukturierte Prompts
-- Caching fuer Demo-Daten moeglich
+- OpenAI nur optional nutzen.
+- Free APIs bevorzugen.
+- Provider-Fallbacks vorsehen.
+- API-Antworten kompakt halten.
+- Caching fuer Demo- und Providerdaten pruefen.
+- Budgetberechnung nicht durch das LLM ausfuehren lassen.
 
-### Spaetere API-Integration
+### Free API Integration
 
 Risiko:
 
-- Mock-Datenmodell passt nicht zu echten APIs.
+- Kostenfreie Provider koennen Rate Limits, Nutzungsbedingungen, unvollstaendige Daten oder schwankende Antwortqualitaet haben.
 
 Massnahmen:
 
 - klare Provider-Interfaces
-- Weather Provider Interface bereits in MVP 1
+- respektvolle Rate-Limit-Nutzung
+- Fehlerbehandlung und Fallbacks
 - Location-, Kategorie-, Kosten- und Wetterfelder frueh modellieren
 - externe IDs optional vorsehen
-
-### Modell- und Prompt-Kosten
-
-Risiko:
-
-- `gpt-5` kann je nach Antwortumfang Kosten und Latenz erhoehen.
-
-Massnahmen:
-
-- strukturierte, kompakte Outputs
-- Mock-Daten vorfiltern
-- Budgetberechnung nicht durch das LLM ausfuehren lassen
-- Agentenaufrufe fuer MVP 1 auf demo-relevante Workflows begrenzen
+- Providerbedingungen vor Implementierung pruefen
 
 ## Technische Anforderungen
 
@@ -1415,33 +1467,39 @@ Massnahmen:
 | Komponente | Entscheidung | Begruendung |
 | --- | --- | --- |
 | Sprache | TypeScript | Einheitliche Sprache fuer Frontend, Backend und Shared Types reduziert Reibung, vermeidet doppelte Modellpflege und erhoeht die Typsicherheit im Monorepo. |
-| Frontend | Vue 3 + Vite + Pinia + Vue Router | Vue 3 ermoeglicht eine schnelle, komponentenbasierte Dashboard-Web-App; Vite beschleunigt Entwicklung und Build; Pinia und Vue Router decken MVP-1-State und Navigation schlank ab. |
+| Frontend | Vue 3 + Vite + Pinia + Vue Router | Vue 3 ermoeglicht eine schnelle, komponentenbasierte Dashboard-Web-App; Vite beschleunigt Entwicklung und Build; Pinia und Vue Router decken MVP-State und Navigation schlank ab. |
 | Backend | Node.js + NestJS | NestJS liefert klare Modulgrenzen, Dependency Injection und Controller/Service-Strukturen, die gut zu API, Agenten-Orchestrierung und spaeteren Providern passen. |
 | Monorepo | npm Workspaces | Frontend, Backend und Shared Types bleiben gemeinsam versioniert; API- und Domain-Typen koennen konsistent zwischen den Packages genutzt werden. |
-| LLM | OpenAI Responses API | Die Responses API ist fuer agentische Workflows, Assistenzantworten und strukturierte Ausgaben geeignet und bleibt im Backend zentral gekapselt. |
-| Modell MVP 1 | `gpt-5` | Fuer MVP 1 wird ein leistungsfaehiges Modell als Standard gesetzt, damit Chatantworten und Begruendungen demo-tauglich und stabil wirken. |
 | Agenten-Orchestrierung | Eigene NestJS-Orchestrierung | Die Workflows bleiben transparent, deterministisch kontrollierbar und eng an die fachlichen Services gebunden; das reduziert Framework-Overhead und erleichtert Reviews. |
-| Agenten-Framework | Kein LangChain, kein LangGraph | MVP 1 benoetigt keine komplexe Graph- oder Chain-Abstraktion; eigene NestJS-Services reichen fuer Coordinator, Spezialagenten, Proposals und klare Verantwortlichkeiten aus. |
-| Datenbank MVP 1 | In-Memory Storage | In-Memory Storage haelt den Demo-Prototyp schlank, schnell startbar und unabhaengig von Datenbanksetup oder Migrationen. |
-| Datenbank MVP 2 | PostgreSQL | PostgreSQL ist fuer persistente Reisen, Nutzerpraeferenzen, Reisehistorie und spaetere relationale Abfragen geeignet. |
+| Agenten-Framework | Kein LangChain, kein LangGraph | Die Anwendung benoetigt keine externe Chain- oder Graph-Abstraktion; eigene NestJS-Services reichen fuer Coordinator, Spezialagenten, Proposals und klare Verantwortlichkeiten aus. |
+| Datenhaltung MVP 1 | In-Memory Storage | In-Memory Storage haelt den Demo-Prototyp schlank, schnell startbar und unabhaengig von Datenbanksetup oder Migrationen. |
+| Datenbank MVP 3 | PostgreSQL | PostgreSQL ist fuer persistente Reisen, Nutzerpraeferenzen, Reisehistorie und spaetere relationale Abfragen geeignet. |
 | Wetter MVP 1 | `MockWeatherProvider` | Mock-Wetter macht das Demo-Szenario reproduzierbar und erlaubt kontrolliertes Replanning ohne externe API-Abhaengigkeit. |
-| Wetter MVP 2 | externe Wetter-API | Echte Wetterdaten werden erst relevant, wenn die Anwendung ueber die stabile Demo hinaus realistische Planung unterstuetzen soll. |
+| Wetter MVP 2 | Open-Meteo | Open-Meteo ist ein kostenfreier Wetterprovider und passt zur Free-API-Zielarchitektur. |
+| Geocoding MVP 2 | Nominatim / OpenStreetMap | Nominatim ermoeglicht kostenfreie Zielort- und Koordinatenauflösung auf Basis von OpenStreetMap. |
 | Places MVP 1 | Mock-Daten | Kuratierte Mock-Aktivitaeten sichern stabile Empfehlungen, nachvollziehbare Scores und eine verlaessliche Berlin-Demo. |
-| Places MVP 2 | Google Places API | Google Places kann spaeter echte Restaurants, Museen, Aktivitaeten, Standortdaten und Oeffnungszeiten liefern. |
+| Places MVP 2 | OpenTripMap, Wikidata, Wikipedia | Orte, Sehenswuerdigkeiten und Wissensdaten sollen ueber kostenfreie oder kostenfrei nutzbare Quellen priorisiert werden. |
+| Karte MVP 2 | Leaflet + OpenStreetMap | Ermoeglicht eine echte Kartenansicht ohne verpflichtende kostenpflichtige Kartenanbieter. |
+| Routing MVP 2/3 | OSRM optional | OSRM kann fuer nicht-produktive Tests ueber Demo Server oder spaeter selbst gehostet genutzt werden. |
+| Optionales LLM | OpenAI Responses API | OpenAI bleibt technisch vorbereitet, aber nur optional fuer Chat, Begruendungen, Textveredelung und AI Structured Planning Experimente. |
 | Budgetberechnung | Deterministischer `BudgetService` | Budgetwerte muessen nachvollziehbar, testbar und wiederholbar sein; das LLM darf erklaeren, aber keine unvalidierten Summen als Wahrheit setzen. |
 | Replanning | Proposal-basierter Accept/Reject-Flow | Kritische Plan- und Budgetaenderungen werden nicht automatisch uebernommen, damit Nutzer Kontrolle behalten und der aktive Plan stabil bleibt. |
 | UI | Dashboard-zentriert | Der Chat ist wichtig, aber Tagesplan, Budget, Route, Checkliste und Agent Insights muessen parallel sichtbar und steuerbar bleiben. |
 | Testing MVP 1 | Manuelle PowerShell/API-Tests + TypeScript Checks | Fuer den Demo-Prototyp reichen reproduzierbare API-Flows, Build-/Typechecks und manuelle Browserpruefung; automatisierte E2E-Tests koennen spaeter folgen. |
-| Export MVP 3 | PDF-Export + Kalender-Export | Exporte sind wertvolle Produktfeatures, gehoeren aber nicht in den MVP-1-Kern der agentischen Planung und Neuplanung. |
+| Export MVP 3 | PDF-Export + Kalender-Export | Exporte sind wertvolle Produktfeatures, gehoeren aber nicht in den Kern der Free-API-Planungsarchitektur. |
 
 ### Externe Schnittstellen
 
 | Schnittstelle | Zweck | Status | Details |
 | --- | --- | --- | --- |
-| OpenAI Responses API | Chatantworten, Begruendungen, strukturierte Assistenz | vorbereitet / teilweise implementiert | Modell: `gpt-5`, Fallback ohne API-Key, Kapselung im `OpenAiService` |
-| Wetter-API | echte Wetterdaten fuer Replanning | MVP 2 | in MVP 1 ueber `MockWeatherProvider` simuliert |
-| Google Places API | Restaurants, Museen, Aktivitaeten | MVP 2 | in MVP 1 ueber `MockDataService` und kuratierte Berlin-Daten simuliert |
-| Flugstatus-API | Flugzeitaenderungen | MVP 3 | spaeterer Replanning-Trigger fuer Anreise- und Tagesplananpassungen |
+| Open-Meteo | Wetterdaten fuer Planung und Replanning | MVP 2 geplant | priorisierter Free-API-Wetterprovider |
+| Nominatim / OpenStreetMap | Geocoding und Ortsauflösung | MVP 2 geplant | Zielort, Koordinaten und OSM-Bezug; Nutzung muss respektvoll mit Rate Limits erfolgen |
+| OpenTripMap | POIs, Sehenswuerdigkeiten und Aktivitaeten | MVP 2 geplant | kostenfrei nutzbarer POI-Provider; API-Key/Free-Tier-Bedingungen vor Implementierung pruefen |
+| Wikidata / Wikipedia | Wissensdaten und POI-Ergaenzungen | MVP 2 geplant | Beschreibungen, Kontext und Plausibilisierung von Orten |
+| Leaflet + OpenStreetMap | Kartenansicht im Frontend | MVP 2 geplant | freie Kartenbasis fuer RouteMapPanel-Ausbau |
+| OSRM | Routing | optional MVP 2/3 | Demo Server nur fuer Tests; spaeter selbst hostbar |
+| OpenAI Responses API | Chatantworten, Begruendungen, Textveredelung und optionale AI Structured Planning Experimente | optional vorbereitet | kein Pflichtbestandteil; Fallback ohne API-Key; `OpenAiPlanningService` und `StructuredPlanNormalizer` dienen als optionaler Guardrail-Pfad |
+| Flugstatus-API | Flugzeitaenderungen | MVP 3 optional | spaeterer Replanning-Trigger fuer Anreise- und Tagesplananpassungen |
 | PDF Export | Reiseplan exportieren | MVP 3 | spaeteres Export Feature fuer teilbare Reiseplaene |
 | Kalender Export | Tagesplan in Kalender uebernehmen | MVP 3 | spaeteres Export Feature fuer Zeitfenster und Aktivitaeten |
 
@@ -1562,6 +1620,32 @@ Deterministische Berechnung ist nachvollziehbar, testbar und wiederholbar. Sie e
 - Aenderungen an Kostenlogik werden zentral im BudgetService umgesetzt.
 - Das Frontend zeigt Budgetdaten nur an und berechnet keine finalen Budgetwerte.
 
+
+### ADR-006: Free APIs + regelbasierte Agentenlogik vor kostenpflichtiger LLM-Planung
+
+**Status:** Angenommen
+
+**Kontext:**
+
+OpenAI Structured Planning ist technisch vorbereitet und kann ueber `OpenAiPlanningService`, `OpenAiService` und `StructuredPlanNormalizer` genutzt werden. Gleichzeitig soll das Hochschulprojekt ab MVP 2 moeglichst kostenfrei funktionieren und keine verpflichtende OpenAI-Nutzung oder kostenpflichtige API voraussetzen.
+
+**Entscheidung:**
+
+Fuer MVP 2 wird der priorisierte Standardpfad auf Free APIs und regelbasierte Agentenlogik umgestellt. Open-Meteo, Nominatim/OpenStreetMap, OpenTripMap, Wikidata/Wikipedia, Leaflet/OpenStreetMap und optional OSRM werden als Zielprovider dokumentiert. OpenAI bleibt optionaler Bonus fuer Chat, Begruendungen, Textveredelung und AI Structured Planning Experimente.
+
+**Begruendung:**
+
+Die Free-API-Strategie reduziert Kostenrisiken, verbessert Reproduzierbarkeit fuer Studium und Praesentation und haelt die Anwendung auch ohne API-Key lauffaehig. Regelbasierte Agentenlogik passt zur bestehenden Architektur mit Backend Source of Truth, deterministischem BudgetService und Proposal Flow. Bestehende OpenAI-Komponenten bleiben nutzbar, ohne den Kernpfad zu dominieren.
+
+**Konsequenzen:**
+
+- MVP 2 priorisiert Provider Interfaces und Free API Adapter.
+- `OpenAiPlanningService` bleibt optional und darf den Standardpfad nicht erzwingen.
+- `StructuredPlanNormalizer` bleibt Guardrail fuer optionale OpenAI-Ausgaben.
+- `TripPlanFactory` bleibt Mock-/Fallback-Pfad.
+- Budgetberechnung bleibt deterministisch im `BudgetService`.
+- Externe Provider muessen Rate Limits, Fehlerfaelle und Fallbacks sauber behandeln.
+
 ## Sequence Diagrams
 
 ### Initiale Reiseplanung
@@ -1640,10 +1724,10 @@ sequenceDiagram
 | OQ-04 | Wie werden Budgetwerte berechnet? | Geklaert | Deterministisch ueber `BudgetService` |
 | OQ-05 | Werden echte APIs in MVP 1 genutzt? | Geklaert | Nein, MVP 1 nutzt Mock-Daten; echte APIs ab MVP 2 |
 | OQ-06 | Wie funktioniert Replanning? | Geklaert | Wetteraenderung erzeugt pending Proposal, Nutzer bestaetigt oder lehnt ab |
-| OQ-07 | Wie wird OpenAI genutzt? | Geklaert | Assistenz, Begruendungen, Chat; keine direkte Planmutation |
+| OQ-07 | Wie wird OpenAI genutzt? | Geklaert | Optional fuer Chat, Begruendungen, Textveredelung und AI Structured Planning Experimente; keine Pflichtabhaengigkeit und keine direkte Planmutation |
 | OQ-08 | Soll der Chat Planaenderungen automatisch durchfuehren? | Geklaert | Nein, Aenderungen bleiben proposal-basiert |
 | OQ-09 | Soll MVP 1 eine echte Karte haben? | Geklaert | Nein, nur schematische Routen-/Ortsliste |
-| OQ-10 | Soll PostgreSQL direkt eingebaut werden? | Geklaert | Nein, erst MVP 2 |
+| OQ-10 | Soll PostgreSQL direkt eingebaut werden? | Geklaert | Nein, PostgreSQL wird auf MVP 3 verschoben |
 | OQ-11 | Soll DTO Validation mit `class-validator` ergaenzt werden? | Offen | Nach MVP-Demo pruefen |
 | OQ-12 | Soll OpenAI Logging verbessert werden? | Offen | Spaeter `Logger.warn` und Fehlerdetails ergaenzen |
 | OQ-13 | Soll es mehrere pending Proposals geben duerfen? | Offen | Fuer MVP 1 akzeptiert; spaeter Produktentscheidung |
@@ -1672,23 +1756,23 @@ sequenceDiagram
 - MockDataService implementieren
 - BudgetService mit deterministischer Berechnung implementieren
 
-### Phase 3: Initiale Planung - abgeschlossen
+### Phase 3: Initiale Demo-Planung - abgeschlossen
 
-- Travel Planning API erstellen
+- Travel Planning API fuer Demo erstellen
 - AgentOrchestratorService erstellen
 - Coordinator Agent Workflow fuer initiale Planung umsetzen
 - Planning, Recommendation, Budget und Checklist Agent anbinden
 - Frontend-Dashboard mit initialem Plan verbinden
 - AgentInsightsPanel mit Agent Trace verbinden
 
-### Phase 4: OpenAI Integration - abgeschlossen
+### Phase 4: Optionale OpenAI Integration - abgeschlossen / optional
 
 - OpenAiModule erstellen
 - Responses API anbinden
-- Modell `gpt-5` konfigurieren
-- strukturierte Antwortformate definieren
-- Validierung und Fallbacks einbauen
-- agentische Begruendungen im UI anzeigen
+- optionale Chat- und Begruendungsantworten ermoeglichen
+- `OpenAiPlanningService` fuer AI Structured Planning Experimente vorbereiten
+- `StructuredPlanNormalizer` als Guardrail fuer optionale OpenAI-Ausgaben nutzen
+- Fallback ohne API-Key erhalten
 
 ### Phase 5: Replanning Demo - abgeschlossen
 
@@ -1700,50 +1784,65 @@ sequenceDiagram
 - ReplanningProposal Modell verwenden
 - Frontend-Flow fuer Vorschlag, Vergleich, Annahme und Ablehnung umsetzen
 
-### Phase 6: UI-Verfeinerung - abgeschlossen
+### Phase 6: Dashboard MVP und freie Reiseanfrage - abgeschlossen / vorbereitet
 
 - Dashboard responsiv verfeinern
 - Budgetdarstellung verbessern
 - Tagesplan visuell klarer strukturieren
 - Karte/Routenuebersicht als MVP-1-Schema darstellen
 - Checkliste interaktiv machen
+- `POST /api/trips/plan` fuer freie Reiseanfragen aktivieren
+- `TripPlanFactory` als Mock-Fallback erhalten
 
-### Phase 7: AI Generated Travel Planning
+### Phase 7: Dokumentation auf kostenfreie MVP-2-Architektur ausrichten
 
-- freie Reiseplanung ueber `POST /api/trips/plan` fachlich ausbauen
-- Coordinator Workflow fuer nutzerdefinierte Ziele und Praeferenzen erweitern
-- strukturierte OpenAI-Ausgaben fuer Planvorschlaege validieren
-- deterministische Services fuer Budget, Mock-Daten und Proposals als Guardrails beibehalten
-- Chat- und Dashboard-Flow fuer echte Reiseanfragen pruefen
+- README aktualisieren
+- Spezifikation aktualisieren
+- OpenAI als optionalen Bonus dokumentieren
+- MVP 2 als Free API Travel Planning definieren
+- ADR fuer Free APIs + regelbasierte Agentenlogik ergaenzen
 
-### Phase 8: PostgreSQL Integration
+### Phase 8: Free API Provider Interfaces und Open-Meteo
 
+- Provider Interfaces fuer externe Daten finalisieren
+- `OpenMeteoWeatherProvider` implementieren
+- Wetterdaten in Planning und Replanning integrieren
+- MockWeatherProvider als Fallback erhalten
+- Fehlerbehandlung und Rate-Limit-Verhalten dokumentieren
+
+### Phase 9: Geocoding und POI Provider
+
+- `NominatimGeocodingProvider` fuer Zielorte und Koordinaten integrieren
+- `OpenTripMapPlacesProvider` fuer POIs integrieren
+- Wikidata/Wikipedia fuer Wissen und POI-Ergaenzungen pruefen
+- Mapping auf interne Activity- und Location-Modelle absichern
+- Recommendation Scoring fuer echte Orte anwenden
+
+### Phase 10: Kartenansicht und optionales Routing
+
+- Leaflet + OpenStreetMap im RouteMapPanel integrieren
+- echte Koordinaten anzeigen
+- RouteMapPanel von schematischer Liste zu Kartenansicht erweitern
+- OSRM optional fuer Routing pruefen
+- Demo Server nur fuer nicht-produktive Tests nutzen
+
+### Phase 11: Real World Polish
+
+- PostgreSQL Integration vorbereiten
 - Repository-Schicht fuer Trips, Plans, Proposals und Checklisten einfuehren
-- In-Memory Storage durch PostgreSQL-Persistenz ersetzen
-- Datenmodell fuer Reisehistorie und Planversionen vorbereiten
-- Migrations- und Seed-Konzept fuer Demo-Daten definieren
-- bestehende API-Vertraege moeglichst stabil halten
-
-### Phase 9: Externe APIs
-
-- Wetter API ueber ExternalWeatherProvider integrieren
-- Google Places API fuer Restaurants, Museen und Aktivitaeten anbinden
-- Flugstatus API als spaeteren Replanning-Trigger vorbereiten
-- Fehlerbehandlung, Rate Limits und Fallbacks fuer externe Dienste definieren
-- Mapping zwischen externen Daten und internen Domain Models absichern
-
-### Phase 10: Export & Praesentation
-
+- Reisehistorie und Planversionierung vorbereiten
 - PDF Export fuer Reiseplaene umsetzen
 - Kalender Export fuer Tagesplan-Zeitfenster vorbereiten
-- Praesentationsvorbereitung fuer Berlin-Demo dokumentieren
-- Demo-Skript mit initialer Planung, Regen an Tag 2 und Accept/Reject-Flow erstellen
-- finale Akzeptanzkriterien gegen UI und API pruefen
+- Praesentationsvorbereitung fuer Berlin-/Rom-/Paris-Demo dokumentieren
 
-### Phase 11: Demo-Haertung
+### Phase 12: Demo-Haertung
 
-- Demo-Szenario Berlin fest testen
+- Demo-Szenarien fest testen
 - Fehler- und Ladezustaende pruefen
 - Agent Trace fuer Debugging nutzbar machen
 - Akzeptanzkriterien gegenpruefen
-- README mit Start- und Demo-Anleitung ergaenzen
+- README mit Start- und Demo-Anleitung aktuell halten
+
+
+
+

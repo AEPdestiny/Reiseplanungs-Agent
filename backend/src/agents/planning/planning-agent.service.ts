@@ -40,6 +40,7 @@ export class PlanningAgentService {
 
   async createInitialPlanFromRequest(request: TripRequest, context: PlanningContext): Promise<PlanningResult> {
     const weather = await this.weatherService.getWeatherForTrip(request);
+    const weatherSourceSummary = this.weatherService.getWeatherSourceSummary(weather);
     const openAiAttempt = await this.openAiPlanningService.createStructuredPlanProposal(request);
     const normalizedOpenAiPlan = openAiAttempt.usedFallback
       ? {
@@ -52,8 +53,8 @@ export class PlanningAgentService {
       return {
         days: normalizedOpenAiPlan.days,
         checklist: this.createPlanningChecklist(context.tripId, false),
-        agentTrace: this.createPlanningAgentTrace(context.timestamp, false, true),
-        agentInsights: this.createPlanningAgentInsights(false, true),
+        agentTrace: this.createPlanningAgentTrace(context.timestamp, false, true, weatherSourceSummary),
+        agentInsights: this.createPlanningAgentInsights(false, true, weatherSourceSummary),
         messageParts: [`Ich habe einen AI-generierten ${request.durationDays}-Tage-Plan fuer ${request.destination} erstellt.`],
         warnings: ["Kosten sind grobe Planungsschaetzungen; das finale Budget wurde deterministisch im Backend berechnet."],
         usedDestinationFallback: false,
@@ -66,8 +67,8 @@ export class PlanningAgentService {
     return {
       days: plan.days,
       checklist: this.createPlanningChecklist(context.tripId, plan.usedDestinationFallback),
-      agentTrace: this.createPlanningAgentTrace(context.timestamp, plan.usedDestinationFallback, false, fallbackReason),
-      agentInsights: this.createPlanningAgentInsights(plan.usedDestinationFallback, false, fallbackReason),
+      agentTrace: this.createPlanningAgentTrace(context.timestamp, plan.usedDestinationFallback, false, weatherSourceSummary, fallbackReason),
+      agentInsights: this.createPlanningAgentInsights(plan.usedDestinationFallback, false, weatherSourceSummary, fallbackReason),
       messageParts: plan.messageParts,
       warnings: [`OpenAI Structured Planning nicht genutzt: ${fallbackReason}`, ...plan.warnings],
       usedDestinationFallback: plan.usedDestinationFallback,
@@ -118,10 +119,12 @@ export class PlanningAgentService {
     timestamp: string,
     usedDestinationFallback: boolean,
     usedOpenAiPlanning: boolean,
+    weatherSourceSummary: string,
     fallbackReason?: string
   ): AgentTraceEntry[] {
     return [
       { agentName: AGENT_NAMES.coordinator, action: "validate_trip_request", summary: "Reiseanfrage validiert", timestamp },
+      { agentName: "Weather Provider", action: "load_weather", summary: weatherSourceSummary, timestamp },
       {
         agentName: AGENT_NAMES.planning,
         action: usedOpenAiPlanning ? "create_openai_structured_plan" : "create_mock_plan",
@@ -142,10 +145,12 @@ export class PlanningAgentService {
   private createPlanningAgentInsights(
     usedDestinationFallback: boolean,
     usedOpenAiPlanning: boolean,
+    weatherSourceSummary: string,
     fallbackReason?: string
   ): AgentInsight[] {
     return [
       { agentName: AGENT_NAMES.coordinator, displayLabel: "Coordinator Agent", status: "completed", summary: "Reiseanfrage validiert" },
+      { agentName: "Weather Provider", displayLabel: "Weather Provider", status: "completed", summary: weatherSourceSummary },
       {
         agentName: "OpenAI Structured Planning",
         displayLabel: "OpenAI Structured Planning",
