@@ -11,12 +11,13 @@ import { ReplanningAgentService } from "../../agents/replanning/replanning-agent
 import { BudgetModule } from "../budget/budget.module";
 import { MockDataModule } from "../mock-data/mock-data.module";
 import { OpenAiModule } from "../openai/openai.module";
+import { PlacesModule } from "../places/places.module";
 import { RecommendationModule } from "../recommendation/recommendation.module";
 import { WeatherModule } from "../weather/weather.module";
 import { AgentOrchestratorService } from "./agent-orchestrator.service";
 
 @Module({
-  imports: [MockDataModule, RecommendationModule, BudgetModule, OpenAiModule, WeatherModule],
+  imports: [MockDataModule, RecommendationModule, BudgetModule, OpenAiModule, WeatherModule, PlacesModule],
   providers: [
     AgentOrchestratorService,
     CoordinatorAgentService,
