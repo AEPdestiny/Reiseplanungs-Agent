@@ -3,6 +3,7 @@ import type { AcceptProposalResponseDto } from "../../dto/accept-proposal.dto";
 import type { ChatMessageRequestDto, ChatMessageResponseDto } from "../../dto/chat-message.dto";
 import type { DemoTripResponseDto } from "../../dto/demo-trip.dto";
 import type { GetTripResponseDto } from "../../dto/get-trip.dto";
+import type { PlanTripRequestDto, PlanTripResponseDto } from "../../dto/plan-trip.dto";
 import type { RejectProposalResponseDto } from "../../dto/reject-proposal.dto";
 import type { SimulateWeatherRequestDto, SimulateWeatherResponseDto } from "../../dto/simulate-weather.dto";
 import { TravelService } from "./travel.service";
@@ -14,6 +15,11 @@ export class TravelController {
   @Post("demo")
   createDemoTrip(): Promise<DemoTripResponseDto> {
     return this.travelService.createDemoTrip();
+  }
+
+  @Post("plan")
+  createPlannedTrip(@Body() body: PlanTripRequestDto): Promise<PlanTripResponseDto> {
+    return this.travelService.createPlannedTrip(body);
   }
 
   @Get(":tripId")

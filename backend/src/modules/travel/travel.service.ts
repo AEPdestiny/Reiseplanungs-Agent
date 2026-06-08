@@ -1,15 +1,19 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import {
   AGENT_NAMES,
+  DEMO_TRIP_DESTINATION,
   DEMO_TRIP_REQUEST,
   type AgentInsight,
   type TravelPlan,
-  type Trip
+  type TravelType,
+  type Trip,
+  type TripRequest
 } from "@travel-agent/shared";
 import { ReplanningAgentService } from "../../agents/replanning/replanning-agent.service";
 import type { AcceptProposalResponseDto } from "../../dto/accept-proposal.dto";
 import type { ChatMessageRequestDto, ChatMessageResponseDto } from "../../dto/chat-message.dto";
 import type { DemoTripResponseDto } from "../../dto/demo-trip.dto";
+import type { PlanTripRequestDto, PlanTripResponseDto } from "../../dto/plan-trip.dto";
 import type { RejectProposalResponseDto } from "../../dto/reject-proposal.dto";
 import type { SimulateWeatherRequestDto, SimulateWeatherResponseDto } from "../../dto/simulate-weather.dto";
 import { AgentOrchestratorService } from "../agent/agent-orchestrator.service";
@@ -21,6 +25,7 @@ import { DemoTripFactory } from "./demo-trip.factory";
 @Injectable()
 export class TravelService {
   private readonly trips = new Map<string, Trip>();
+  private readonly supportedTravelTypes: TravelType[] = ["solo", "couple", "family", "group"];
 
   constructor(
     private readonly demoTripFactory: DemoTripFactory,
@@ -74,6 +79,52 @@ export class TravelService {
       checklist: demoTrip.checklist,
       agentTrace: demoTrip.agentTrace,
       agentInsights: demoTrip.agentInsights
+    };
+  }
+
+  async createPlannedTrip(requestDto: PlanTripRequestDto): Promise<PlanTripResponseDto> {
+    const request = this.validatePlanTripRequest(requestDto);
+    const now = new Date().toISOString();
+    const tripId = `trip_plan_${Date.now()}`;
+    const planId = `plan_${tripId}`;
+    const weather = await this.weatherService.getWeatherForTrip(request);
+    const usedDestinationFallback = !this.hasDestinationMockData(request.destination);
+    const mockTrip = this.demoTripFactory.buildMockPlannedTrip(tripId, request, weather, now, usedDestinationFallback);
+    const planWithoutBudget = {
+      id: planId,
+      request,
+      days: mockTrip.days,
+      status: "active" as const,
+      createdAt: now,
+      updatedAt: now
+    };
+    const budgetSummary = this.budgetService.calculateForPlan(planWithoutBudget);
+    const plan: TravelPlan = {
+      ...planWithoutBudget,
+      budgetSummary
+    };
+    const trip: Trip = {
+      id: tripId,
+      request,
+      activePlan: plan,
+      checklist: mockTrip.checklist,
+      proposals: [],
+      agentTrace: mockTrip.agentTrace,
+      agentInsights: mockTrip.agentInsights,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    this.trips.set(trip.id, trip);
+
+    return {
+      tripId: trip.id,
+      message: this.createPlanTripMessage(request, usedDestinationFallback),
+      plan,
+      budget: budgetSummary,
+      checklist: mockTrip.checklist,
+      agentTrace: mockTrip.agentTrace,
+      agentInsights: mockTrip.agentInsights
     };
   }
 
@@ -182,6 +233,83 @@ export class TravelService {
     }
 
     return trip;
+  }
+
+  private validatePlanTripRequest(request: Partial<PlanTripRequestDto> | undefined): TripRequest {
+    const validationErrors: string[] = [];
+    const destination = typeof request?.destination === "string" ? request.destination.trim() : "";
+    const durationDays = typeof request?.durationDays === "number" ? request.durationDays : 0;
+    const budgetTotal = typeof request?.budgetTotal === "number" ? request.budgetTotal : 0;
+    const numberOfPeople = typeof request?.numberOfPeople === "number" ? request.numberOfPeople : 0;
+    const travelType = request?.travelType;
+    const interests = Array.isArray(request?.interests)
+      ? request.interests
+          .filter((interest): interest is string => typeof interest === "string")
+          .map((interest) => interest.trim())
+          .filter(Boolean)
+      : [];
+
+    if (!destination) {
+      validationErrors.push("destination ist erforderlich.");
+    }
+
+    if (!Number.isInteger(durationDays) || durationDays < 1 || durationDays > 14) {
+      validationErrors.push("durationDays muss eine ganze Zahl zwischen 1 und 14 sein.");
+    }
+
+    if (!Number.isFinite(budgetTotal) || budgetTotal <= 0) {
+      validationErrors.push("budgetTotal muss groesser als 0 sein.");
+    }
+
+    if (request?.currency !== "EUR") {
+      validationErrors.push("currency muss EUR sein.");
+    }
+
+    if (!Number.isInteger(numberOfPeople) || numberOfPeople < 1 || numberOfPeople > 20) {
+      validationErrors.push("numberOfPeople muss eine ganze Zahl zwischen 1 und 20 sein.");
+    }
+
+    if (!travelType || !this.supportedTravelTypes.includes(travelType)) {
+      validationErrors.push("travelType muss solo, couple, family oder group sein.");
+    }
+
+    if (interests.length === 0) {
+      validationErrors.push("interests muss mindestens einen Eintrag enthalten.");
+    }
+
+    if (validationErrors.length > 0) {
+      throw new BadRequestException({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Die Reiseanfrage ist ungueltig.",
+          details: validationErrors
+        }
+      });
+    }
+
+    return {
+      destination,
+      startDate: request?.startDate?.trim() || undefined,
+      endDate: request?.endDate?.trim() || undefined,
+      durationDays,
+      budgetTotal: Number(budgetTotal.toFixed(2)),
+      currency: "EUR",
+      numberOfPeople,
+      travelType: travelType as TravelType,
+      interests
+    };
+  }
+
+  private hasDestinationMockData(destination: string): boolean {
+    return destination.trim().toLowerCase() === DEMO_TRIP_DESTINATION.toLowerCase();
+  }
+
+  private createPlanTripMessage(request: TripRequest, usedDestinationFallback: boolean): string {
+    const baseMessage = `Ich habe einen ${request.durationDays}-Tage-Plan fuer ${request.destination} erstellt.`;
+
+    return usedDestinationFallback
+      ? `${baseMessage} Hinweis: Fuer dieses Ziel gibt es noch keine eigenen Mock-Daten; der Plan nutzt kontrolliert die vorhandenen Berlin-Mockdaten als Fallback.`
+      : baseMessage;
   }
 
   private createProposalDecisionInsights(decision: "accepted" | "rejected"): AgentInsight[] {
