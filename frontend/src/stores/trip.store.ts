@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
-import type { TravelPlan } from "@travel-agent/shared";
-import { getTrip, loadDemoTrip, type TripApiResponse } from "@/services/travel-api.service";
+import type { TravelPlan, TripRequest } from "@travel-agent/shared";
+import { getTrip, loadDemoTrip, planTrip, type TripApiResponse } from "@/services/travel-api.service";
 import { useAgentInsightsStore } from "./agent-insights.store";
 import { useBudgetStore } from "./budget.store";
 import { useChecklistStore } from "./checklist.store";
@@ -10,6 +10,7 @@ interface TripState {
   tripId: string | null;
   plan: TravelPlan | null;
   loading: boolean;
+  planningLoading: boolean;
   error: string | null;
 }
 
@@ -18,6 +19,7 @@ export const useTripStore = defineStore("trip", {
     tripId: null,
     plan: null,
     loading: false,
+    planningLoading: false,
     error: null
   }),
   getters: {
@@ -35,6 +37,19 @@ export const useTripStore = defineStore("trip", {
         this.error = error instanceof Error ? error.message : "Demo-Reise konnte nicht geladen werden.";
       } finally {
         this.loading = false;
+      }
+    },
+    async createPlannedTrip(request: TripRequest): Promise<void> {
+      this.planningLoading = true;
+      this.error = null;
+
+      try {
+        const response = await planTrip(request);
+        this.applyTripResponse(response);
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : "Reise konnte nicht geplant werden.";
+      } finally {
+        this.planningLoading = false;
       }
     },
     async refreshTrip(): Promise<void> {

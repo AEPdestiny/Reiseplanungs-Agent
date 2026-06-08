@@ -9,6 +9,9 @@
     @load-demo="loadDemoTrip"
     @simulate-rain="simulateRain"
   >
+    <template #planning>
+      <TripPlanningForm :is-planning="tripStore.planningLoading" @submit="createPlannedTrip" />
+    </template>
     <template #chat>
       <ChatPanel />
     </template>
@@ -35,6 +38,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import type { TripRequest } from "@travel-agent/shared";
 import AgentInsightsPanel from "@/components/agent-insights/AgentInsightsPanel.vue";
 import BudgetPanel from "@/components/budget/BudgetPanel.vue";
 import ChatPanel from "@/components/chat/ChatPanel.vue";
@@ -43,6 +47,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout.vue";
 import ReplanningProposalPanel from "@/components/replanning/ReplanningProposalPanel.vue";
 import DayPlanPanel from "@/components/trip/DayPlanPanel.vue";
 import RouteMapPanel from "@/components/trip/RouteMapPanel.vue";
+import TripPlanningForm from "@/components/trip/TripPlanningForm.vue";
 import { healthCheck } from "@/services/travel-api.service";
 import { useProposalStore } from "@/stores/proposal.store";
 import { useTripStore } from "@/stores/trip.store";
@@ -64,6 +69,10 @@ onMounted(async () => {
 
 async function loadDemoTrip(): Promise<void> {
   await tripStore.loadDemoTrip();
+}
+
+async function createPlannedTrip(request: TripRequest): Promise<void> {
+  await tripStore.createPlannedTrip(request);
 }
 
 async function simulateRain(): Promise<void> {

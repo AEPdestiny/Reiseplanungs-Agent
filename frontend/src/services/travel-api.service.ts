@@ -3,6 +3,7 @@ import type {
   BudgetSummary,
   Checklist,
   ReplanningProposal,
+  TripRequest,
   TravelPlan,
   WeatherEvent
 } from "@travel-agent/shared";
@@ -65,6 +66,13 @@ export function healthCheck(): Promise<HealthResponse> {
 export function loadDemoTrip(): Promise<TripApiResponse> {
   return requestJson<TripApiResponse>("/trips/demo", {
     method: "POST"
+  });
+}
+
+export function planTrip(request: TripRequest): Promise<TripApiResponse> {
+  return requestJson<TripApiResponse>("/trips/plan", {
+    method: "POST",
+    body: JSON.stringify(request)
   });
 }
 

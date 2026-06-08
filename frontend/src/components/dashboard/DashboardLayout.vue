@@ -26,6 +26,8 @@
 
     <p v-if="error" class="error-banner">{{ error }}</p>
 
+    <slot name="planning" />
+
     <section class="dashboard-grid" aria-label="Reiseplanungs-Dashboard">
       <div class="grid-column side-column">
         <slot name="chat" />
