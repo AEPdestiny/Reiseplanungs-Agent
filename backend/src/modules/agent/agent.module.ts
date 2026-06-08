@@ -3,6 +3,7 @@ import { BudgetAgentService } from "../../agents/budget/budget-agent.service";
 import { ChecklistAgentService } from "../../agents/checklist/checklist-agent.service";
 import { CoordinatorAgentService } from "../../agents/coordinator/coordinator-agent.service";
 import { PlanningAgentService } from "../../agents/planning/planning-agent.service";
+import { TripPlanFactory } from "../../agents/planning/trip-plan.factory";
 import { RecommendationAgentService } from "../../agents/recommendation/recommendation-agent.service";
 import { ReplanningAgentService } from "../../agents/replanning/replanning-agent.service";
 import { BudgetModule } from "../budget/budget.module";
@@ -18,6 +19,7 @@ import { AgentOrchestratorService } from "./agent-orchestrator.service";
     AgentOrchestratorService,
     CoordinatorAgentService,
     PlanningAgentService,
+    TripPlanFactory,
     RecommendationAgentService,
     BudgetAgentService,
     ReplanningAgentService,
