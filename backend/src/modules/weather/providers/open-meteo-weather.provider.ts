@@ -1,11 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import type { TripRequest, WeatherEvent, WeatherSummary, WeatherCondition } from "@travel-agent/shared";
+import type { GeocodingResult } from "../../geocoding/geocoding-provider.interface";
 import type { WeatherProvider } from "../weather-provider.interface";
-
-interface Coordinates {
-  latitude: number;
-  longitude: number;
-}
 
 interface OpenMeteoDailyForecast {
   time?: unknown;
@@ -19,45 +15,25 @@ interface OpenMeteoForecastResponse {
   daily?: OpenMeteoDailyForecast;
 }
 
-const CITY_COORDINATES: Record<string, Coordinates> = {
-  berlin: { latitude: 52.52, longitude: 13.405 },
-  rom: { latitude: 41.9028, longitude: 12.4964 },
-  rome: { latitude: 41.9028, longitude: 12.4964 },
-  paris: { latitude: 48.8566, longitude: 2.3522 },
-  barcelona: { latitude: 41.3874, longitude: 2.1686 }
-};
-
 @Injectable()
 export class OpenMeteoWeatherProvider implements WeatherProvider {
   private readonly forecastUrl = "https://api.open-meteo.com/v1/forecast";
   private readonly timeoutMs = 5000;
 
   async getWeatherForTrip(request: TripRequest): Promise<WeatherSummary[]> {
-    const coordinates = this.resolveCoordinates(request.destination);
+    throw new Error(`Open-Meteo requires geocoded coordinates for destination: ${request.destination}`);
+  }
 
-    if (!coordinates) {
-      throw new Error(`Open-Meteo coordinates unavailable for destination: ${request.destination}`);
-    }
-
-    const payload = await this.fetchForecast(coordinates, request.durationDays);
-    return this.normalizeForecast(payload, request.durationDays);
+  async getWeatherForCoordinates(geocodingResult: GeocodingResult, durationDays: number): Promise<WeatherSummary[]> {
+    const payload = await this.fetchForecast(geocodingResult, durationDays);
+    return this.normalizeForecast(payload, durationDays);
   }
 
   async simulateWeatherEvent(event: WeatherEvent): Promise<WeatherEvent> {
     return event;
   }
 
-  private resolveCoordinates(destination: string): Coordinates | undefined {
-    const normalizedDestination = destination
-      .trim()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
-
-    return CITY_COORDINATES[normalizedDestination];
-  }
-
-  private async fetchForecast(coordinates: Coordinates, durationDays: number): Promise<OpenMeteoForecastResponse> {
+  private async fetchForecast(coordinates: GeocodingResult, durationDays: number): Promise<OpenMeteoForecastResponse> {
     const url = new URL(this.forecastUrl);
     url.searchParams.set("latitude", String(coordinates.latitude));
     url.searchParams.set("longitude", String(coordinates.longitude));

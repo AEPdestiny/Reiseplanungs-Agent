@@ -43,14 +43,17 @@ export class TravelService {
     const tripId = `trip_demo_berlin_${Date.now()}`;
     const planId = `plan_${tripId}`;
     const weather = await this.weatherService.getWeatherForTrip(request);
+    const geocodingSourceSummary = this.weatherService.getGeocodingSourceSummary(weather);
     const weatherSourceSummary = this.weatherService.getWeatherSourceSummary(weather);
     const demoTrip = this.demoTripFactory.buildBerlinDemoTrip(tripId, request, weather, now);
     const agentTrace = [
       ...demoTrip.agentTrace,
+      { agentName: "Geocoding Provider", action: "geocode_destination", summary: geocodingSourceSummary, timestamp: now },
       { agentName: "Weather Provider", action: "load_weather", summary: weatherSourceSummary, timestamp: now }
     ];
     const agentInsights = [
       ...demoTrip.agentInsights,
+      { agentName: "Geocoding Provider", displayLabel: "Geocoding Provider", status: "completed" as const, summary: geocodingSourceSummary },
       { agentName: "Weather Provider", displayLabel: "Weather Provider", status: "completed" as const, summary: weatherSourceSummary }
     ];
 
