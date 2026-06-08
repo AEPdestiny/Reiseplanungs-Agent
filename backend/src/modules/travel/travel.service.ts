@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import {
   AGENT_NAMES,
-  DEMO_TRIP_DESTINATION,
   DEMO_TRIP_REQUEST,
   type AgentInsight,
   type TravelPlan,
@@ -9,6 +8,7 @@ import {
   type Trip,
   type TripRequest
 } from "@travel-agent/shared";
+import { PlanningAgentService } from "../../agents/planning/planning-agent.service";
 import { ReplanningAgentService } from "../../agents/replanning/replanning-agent.service";
 import type { AcceptProposalResponseDto } from "../../dto/accept-proposal.dto";
 import type { ChatMessageRequestDto, ChatMessageResponseDto } from "../../dto/chat-message.dto";
@@ -31,6 +31,7 @@ export class TravelService {
     private readonly demoTripFactory: DemoTripFactory,
     private readonly budgetService: BudgetService,
     private readonly weatherService: WeatherService,
+    private readonly planningAgentService: PlanningAgentService,
     private readonly replanningAgentService: ReplanningAgentService,
     private readonly proposalService: ProposalService,
     private readonly agentOrchestratorService: AgentOrchestratorService
@@ -87,13 +88,14 @@ export class TravelService {
     const now = new Date().toISOString();
     const tripId = `trip_plan_${Date.now()}`;
     const planId = `plan_${tripId}`;
-    const weather = await this.weatherService.getWeatherForTrip(request);
-    const usedDestinationFallback = !this.hasDestinationMockData(request.destination);
-    const mockTrip = this.demoTripFactory.buildMockPlannedTrip(tripId, request, weather, now, usedDestinationFallback);
+    const planningResult = await this.planningAgentService.createInitialPlanFromRequest(request, {
+      tripId,
+      timestamp: now
+    });
     const planWithoutBudget = {
       id: planId,
       request,
-      days: mockTrip.days,
+      days: planningResult.days,
       status: "active" as const,
       createdAt: now,
       updatedAt: now
@@ -107,10 +109,10 @@ export class TravelService {
       id: tripId,
       request,
       activePlan: plan,
-      checklist: mockTrip.checklist,
+      checklist: planningResult.checklist,
       proposals: [],
-      agentTrace: mockTrip.agentTrace,
-      agentInsights: mockTrip.agentInsights,
+      agentTrace: planningResult.agentTrace,
+      agentInsights: planningResult.agentInsights,
       createdAt: now,
       updatedAt: now
     };
@@ -119,12 +121,12 @@ export class TravelService {
 
     return {
       tripId: trip.id,
-      message: this.createPlanTripMessage(request, usedDestinationFallback),
+      message: this.createPlanningMessage(planningResult.messageParts, planningResult.warnings),
       plan,
       budget: budgetSummary,
-      checklist: mockTrip.checklist,
-      agentTrace: mockTrip.agentTrace,
-      agentInsights: mockTrip.agentInsights
+      checklist: planningResult.checklist,
+      agentTrace: planningResult.agentTrace,
+      agentInsights: planningResult.agentInsights
     };
   }
 
@@ -300,16 +302,8 @@ export class TravelService {
     };
   }
 
-  private hasDestinationMockData(destination: string): boolean {
-    return destination.trim().toLowerCase() === DEMO_TRIP_DESTINATION.toLowerCase();
-  }
-
-  private createPlanTripMessage(request: TripRequest, usedDestinationFallback: boolean): string {
-    const baseMessage = `Ich habe einen ${request.durationDays}-Tage-Plan fuer ${request.destination} erstellt.`;
-
-    return usedDestinationFallback
-      ? `${baseMessage} Hinweis: Fuer dieses Ziel gibt es noch keine eigenen Mock-Daten; der Plan nutzt kontrolliert die vorhandenen Berlin-Mockdaten als Fallback.`
-      : baseMessage;
+  private createPlanningMessage(messageParts: string[], warnings: string[]): string {
+    return [...messageParts, ...warnings.map((warning) => `Hinweis: ${warning}`)].join(" ");
   }
 
   private createProposalDecisionInsights(decision: "accepted" | "rejected"): AgentInsight[] {

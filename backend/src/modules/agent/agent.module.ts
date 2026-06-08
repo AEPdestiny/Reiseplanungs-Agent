@@ -9,10 +9,11 @@ import { BudgetModule } from "../budget/budget.module";
 import { MockDataModule } from "../mock-data/mock-data.module";
 import { OpenAiModule } from "../openai/openai.module";
 import { RecommendationModule } from "../recommendation/recommendation.module";
+import { WeatherModule } from "../weather/weather.module";
 import { AgentOrchestratorService } from "./agent-orchestrator.service";
 
 @Module({
-  imports: [MockDataModule, RecommendationModule, BudgetModule, OpenAiModule],
+  imports: [MockDataModule, RecommendationModule, BudgetModule, OpenAiModule, WeatherModule],
   providers: [
     AgentOrchestratorService,
     CoordinatorAgentService,
@@ -22,6 +23,6 @@ import { AgentOrchestratorService } from "./agent-orchestrator.service";
     ReplanningAgentService,
     ChecklistAgentService
   ],
-  exports: [AgentOrchestratorService, ReplanningAgentService]
+  exports: [AgentOrchestratorService, ReplanningAgentService, PlanningAgentService]
 })
 export class AgentModule {}

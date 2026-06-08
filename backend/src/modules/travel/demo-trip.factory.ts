@@ -20,10 +20,6 @@ export interface DemoTripBuildResult {
   agentInsights: AgentInsight[];
 }
 
-export interface MockPlannedTripBuildResult extends DemoTripBuildResult {
-  usedDestinationFallback: boolean;
-}
-
 @Injectable()
 export class DemoTripFactory {
   constructor(
@@ -37,22 +33,6 @@ export class DemoTripFactory {
       checklist: this.createDemoChecklist(tripId),
       agentTrace: this.createDemoAgentTrace(timestamp),
       agentInsights: this.createDemoAgentInsights()
-    };
-  }
-
-  buildMockPlannedTrip(
-    tripId: string,
-    request: TripRequest,
-    weather: WeatherSummary[],
-    timestamp: string,
-    usedDestinationFallback: boolean
-  ): MockPlannedTripBuildResult {
-    return {
-      days: this.createMockPlannedDays(request, weather),
-      checklist: this.createPlanningChecklist(tripId, usedDestinationFallback),
-      agentTrace: this.createPlanningAgentTrace(timestamp, usedDestinationFallback),
-      agentInsights: this.createPlanningAgentInsights(usedDestinationFallback),
-      usedDestinationFallback
     };
   }
 
@@ -95,53 +75,6 @@ export class DemoTripFactory {
         ]
       }
     ];
-  }
-
-  private createMockPlannedDays(request: TripRequest, weather: WeatherSummary[]): TravelDay[] {
-    const dayTemplates = [
-      {
-        title: "Ankommen und Stadtueberblick",
-        preferredArea: "Mitte",
-        activityIds: ["brandenburg-gate", "museum-island", "cafe-break-mitte", "restaurant-mitte", "local-transit-day-ticket"]
-      },
-      {
-        title: "Kultur, Essen und flexible Wege",
-        preferredArea: "Kreuzberg",
-        activityIds: ["east-side-gallery", "markthalle-neun", "berlinische-galerie", "kreuzberg-dinner", "local-transit-day-ticket"]
-      },
-      {
-        title: "Geschichte und entspannter Abschluss",
-        preferredArea: "Charlottenburg",
-        activityIds: ["reichstag-dome", "charlottenburg-palace", "technology-museum", "savignyplatz-dinner", "local-transit-day-ticket"]
-      }
-    ];
-    const timeWindows = [
-      ["10:00", "11:00"],
-      ["11:30", "13:30"],
-      ["14:30", "15:15"],
-      ["18:30", "20:00"],
-      ["20:15", "20:45"]
-    ];
-
-    return Array.from({ length: request.durationDays }, (_, index) => {
-      const dayNumber = index + 1;
-      const template = dayTemplates[index % dayTemplates.length];
-
-      return {
-        dayNumber,
-        title: `${template.title} in ${request.destination}`,
-        weather: weather.find((item) => item.dayNumber === dayNumber),
-        timeSlots: template.activityIds.map((activityId, slotIndex) => {
-          const [startTime, endTime] = timeWindows[slotIndex];
-          return this.createTimeSlot(
-            `day${dayNumber}-slot${slotIndex + 1}`,
-            startTime,
-            endTime,
-            this.createActivity(activityId, request, weather, dayNumber, template.preferredArea)
-          );
-        })
-      };
-    });
   }
 
   private createActivity(
@@ -217,68 +150,12 @@ export class DemoTripFactory {
     };
   }
 
-  private createPlanningChecklist(tripId: string, usedDestinationFallback: boolean): Checklist {
-    return {
-      id: `checklist_${tripId}`,
-      tripId,
-      items: [
-        {
-          id: "check_documents",
-          label: "Ausweise und Buchungsunterlagen pruefen",
-          category: "documents",
-          completed: false,
-          priority: "high"
-        },
-        {
-          id: "check_budget",
-          label: "Budgetrahmen und Tageskosten pruefen",
-          category: "preparation",
-          completed: false,
-          priority: "medium"
-        },
-        {
-          id: "prepare_weather",
-          label: "Wetter vor Reisebeginn erneut pruefen",
-          category: "preparation",
-          completed: false,
-          priority: "medium"
-        },
-        {
-          id: "review_mock_fallback",
-          label: usedDestinationFallback
-            ? "Mock-Fallback pruefen: Aktivitaeten basieren aktuell auf Berlin-Daten"
-            : "Aktivitaeten und Interessen final pruefen",
-          category: "preparation",
-          completed: false,
-          priority: usedDestinationFallback ? "high" : "medium"
-        }
-      ]
-    };
-  }
-
   private createDemoAgentTrace(timestamp: string): AgentTraceEntry[] {
     return [
       { agentName: AGENT_NAMES.coordinator, action: "analyze_request", summary: "Anfrage analysiert", timestamp },
       { agentName: AGENT_NAMES.planning, action: "create_day_structure", summary: "Tagesstruktur erstellt", timestamp },
       { agentName: AGENT_NAMES.recommendation, action: "score_activities", summary: "Aktivitaeten bewertet", timestamp },
       { agentName: AGENT_NAMES.budget, action: "calculate_budget", summary: "Budget geprueft", timestamp },
-      { agentName: AGENT_NAMES.checklist, action: "create_checklist", summary: "Checkliste erstellt", timestamp }
-    ];
-  }
-
-  private createPlanningAgentTrace(timestamp: string, usedDestinationFallback: boolean): AgentTraceEntry[] {
-    return [
-      { agentName: AGENT_NAMES.coordinator, action: "validate_trip_request", summary: "Reiseanfrage validiert", timestamp },
-      {
-        agentName: AGENT_NAMES.planning,
-        action: "create_mock_plan",
-        summary: usedDestinationFallback
-          ? "Mock-Plan mit transparentem Berlin-Datenfallback erstellt"
-          : "Mock-Plan aus vorhandenen Zieldaten erstellt",
-        timestamp
-      },
-      { agentName: AGENT_NAMES.recommendation, action: "score_activities", summary: "Aktivitaeten bewertet", timestamp },
-      { agentName: AGENT_NAMES.budget, action: "calculate_budget", summary: "Budget deterministisch berechnet", timestamp },
       { agentName: AGENT_NAMES.checklist, action: "create_checklist", summary: "Checkliste erstellt", timestamp }
     ];
   }
@@ -293,20 +170,4 @@ export class DemoTripFactory {
     ];
   }
 
-  private createPlanningAgentInsights(usedDestinationFallback: boolean): AgentInsight[] {
-    return [
-      { agentName: AGENT_NAMES.coordinator, displayLabel: "Coordinator Agent", status: "completed", summary: "Reiseanfrage validiert" },
-      {
-        agentName: AGENT_NAMES.planning,
-        displayLabel: "Planning Agent",
-        status: "completed",
-        summary: usedDestinationFallback
-          ? "Plan mit Berlin-Mockdaten als Fallback erstellt"
-          : "Plan aus vorhandenen Mockdaten erstellt"
-      },
-      { agentName: AGENT_NAMES.recommendation, displayLabel: "Recommendation Agent", status: "completed", summary: "Aktivitaeten bewertet" },
-      { agentName: AGENT_NAMES.budget, displayLabel: "Budget Agent", status: "completed", summary: "Budget deterministisch berechnet" },
-      { agentName: AGENT_NAMES.checklist, displayLabel: "Checklist Agent", status: "completed", summary: "Checkliste erstellt" }
-    ];
-  }
 }
