@@ -70,7 +70,37 @@ export class OpenAiService {
     }
   }
 
-  private async createResponse(apiKey: string, input: string): Promise<string> {
+  async generateStructuredTravelPlan(input: string): Promise<{ rawText?: string; usedFallback: boolean; fallbackReason?: string }> {
+    const apiKey = appConfig.openai.apiKey;
+
+    if (!apiKey) {
+      return {
+        usedFallback: true,
+        fallbackReason: "OPENAI_API_KEY fehlt."
+      };
+    }
+
+    try {
+      const response = await this.createResponse(apiKey, input, 2200);
+
+      return response
+        ? {
+            rawText: response,
+            usedFallback: false
+          }
+        : {
+            usedFallback: true,
+            fallbackReason: "OpenAI lieferte keine verwertbare Antwort."
+          };
+    } catch {
+      return {
+        usedFallback: true,
+        fallbackReason: "OpenAI-Planung konnte nicht ausgefuehrt werden."
+      };
+    }
+  }
+
+  private async createResponse(apiKey: string, input: string, maxOutputTokens = 500): Promise<string> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 12000);
 
@@ -84,7 +114,7 @@ export class OpenAiService {
         body: JSON.stringify({
           model: appConfig.openai.model,
           input,
-          max_output_tokens: 500
+          max_output_tokens: maxOutputTokens
         }),
         signal: controller.signal
       });
