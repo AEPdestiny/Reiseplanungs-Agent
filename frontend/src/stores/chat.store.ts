@@ -115,6 +115,18 @@ function createLocalFallbackMessage(message: string): string | null {
     return `Lokaler Fallback: Wichtige Stationen im Plan sind ${highlights.join(", ")}.`;
   }
 
+  if (normalized.includes("warum") || normalized.includes("wieso") || normalized.includes("geplant") || normalized.includes("empfohlen")) {
+    const activity = plan.days
+      .flatMap((day) => day.timeSlots.map((slot) => slot.activity))
+      .find((candidate) => normalized.includes(normalize(candidate.name)));
+
+    if (activity) {
+      return `Lokaler Fallback: ${activity.name} wurde geplant, weil es zu Ziel, Interessen und Tagesstruktur passt. ${activity.reasoning}`;
+    }
+
+    return "Lokaler Fallback: Die Reihenfolge basiert auf Tagesstruktur, Interessen, Wettertauglichkeit, Budget und Kategorie-Mix.";
+  }
+
   if (normalized.includes("quelle") || normalized.includes("daten") || normalized.includes("api")) {
     const summaries = agentInsightsStore.agentInsights.map((insight) => insight.summary.toLowerCase()).join(" ");
     const sources = ["Nominatim", "Open-Meteo", "Wikidata", "Wikipedia", "OpenTripMap", "OpenStreetMap"].filter((source) =>

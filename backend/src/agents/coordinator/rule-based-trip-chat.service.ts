@@ -46,6 +46,13 @@ export class RuleBasedTripChatService {
       };
     }
 
+    if (this.isWhyQuestion(normalizedMessage)) {
+      return {
+        intent: "why",
+        message: this.createWhyAnswer(trip, message, normalizedMessage)
+      };
+    }
+
     const requestedDay = this.detectRequestedDay(normalizedMessage);
 
     if (requestedDay) {
@@ -134,6 +141,35 @@ export class RuleBasedTripChatService {
     return `Die wichtigsten Highlights im Plan sind: ${activities.map((activity) => activity.name).join(", ")}.`;
   }
 
+  private createWhyAnswer(trip: Trip, originalMessage: string, normalizedMessage: string): string {
+    const requestedDay = this.detectRequestedDay(normalizedMessage);
+    const matchedActivity = this.findActivityByQuestion(trip, originalMessage);
+
+    if (matchedActivity) {
+      return [
+        `${matchedActivity.name} wurde geplant, weil es zum Ziel ${trip.request.destination} und zu den Interessen ${trip.request.interests.join(", ")} passt.`,
+        matchedActivity.reasoning,
+        `Die Aktivitaet ist als ${matchedActivity.indoorOutdoor} eingeordnet, dauert ca. ${matchedActivity.durationMinutes} Minuten und kostet ${this.formatCurrency(matchedActivity.estimatedCostTotal)}.`
+      ].join(" ");
+    }
+
+    if (requestedDay) {
+      const day = trip.activePlan?.days.find((candidate) => candidate.dayNumber === requestedDay);
+
+      if (day) {
+        const activities = day.timeSlots.map((slot) => slot.activity.name).join(", ");
+        const weather = day.weather ? ` Das Wetter wurde beruecksichtigt: ${day.weather.description}` : "";
+        return `Tag ${day.dayNumber} wurde so aufgebaut, damit die Aktivitaeten zeitlich zusammenpassen und zu Interessen, Budget und Wetter passen. Enthalten sind: ${activities}.${weather}`;
+      }
+    }
+
+    if (normalizedMessage.includes("reihenfolge")) {
+      return "Die Reihenfolge orientiert sich an Tagesstruktur, Aktivitaetsdauer, Wettertauglichkeit und einer Mischung aus Highlights, Essen, Pausen und Wegen. Der Chat veraendert die Reihenfolge nicht direkt.";
+    }
+
+    return "Die Empfehlungen wurden anhand von Interessen, Wettertauglichkeit, Budget, Kategorie-Mix und vorhandenen Ortsdaten ausgewählt. Ich kann auch zu einer konkreten Aktivitaet erklaeren, warum sie im Plan steht.";
+  }
+
   private createDayAnswer(trip: Trip, dayNumber: number): string {
     const day = trip.activePlan?.days.find((candidate) => candidate.dayNumber === dayNumber);
 
@@ -165,6 +201,12 @@ export class RuleBasedTripChatService {
 
   private getActivities(trip: Trip) {
     return trip.activePlan?.days.flatMap((day) => day.timeSlots.map((slot) => slot.activity)) ?? [];
+  }
+
+  private findActivityByQuestion(trip: Trip, message: string) {
+    const normalizedMessage = this.normalize(message);
+
+    return this.getActivities(trip).find((activity) => normalizedMessage.includes(this.normalize(activity.name)));
   }
 
   private detectRequestedDay(message: string): number | null {
@@ -207,6 +249,12 @@ export class RuleBasedTripChatService {
 
   private isSourcesQuestion(message: string): boolean {
     return ["quelle", "daten", "api", "provider"].some((signal) => message.includes(signal));
+  }
+
+  private isWhyQuestion(message: string): boolean {
+    return ["warum", "wieso", "weshalb", "begrund", "begruend", "empfohlen", "geplant", "reihenfolge"].some((signal) =>
+      message.includes(signal)
+    );
   }
 
   private normalize(value: string): string {

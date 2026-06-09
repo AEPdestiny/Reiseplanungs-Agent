@@ -83,10 +83,11 @@ function scrollMessagesToBottom(): void {
 <style scoped>
 .chat-panel {
   display: grid;
-  grid-template-rows: auto minmax(260px, 1fr) auto auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   gap: var(--space-3);
-  min-height: 520px;
-  max-height: 720px;
+  height: clamp(520px, calc(100vh - 48px), 680px);
+  min-height: 0;
+  max-height: calc(100vh - 48px);
   overflow: hidden;
 }
 
@@ -109,14 +110,17 @@ function scrollMessagesToBottom(): void {
   display: grid;
   align-content: start;
   gap: var(--space-3);
-  min-height: 260px;
-  overflow: auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding-right: var(--space-1);
+  overscroll-behavior: contain;
 }
 
 .message {
   display: grid;
   gap: var(--space-1);
+  min-width: 0;
   border-radius: var(--radius-md);
   padding: var(--space-3);
   background: var(--color-background);
@@ -139,6 +143,10 @@ function scrollMessagesToBottom(): void {
 .message p {
   margin: 0;
   color: var(--color-text-primary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.45;
 }
 
 .chat-form {
@@ -180,8 +188,16 @@ button:disabled {
 
 @media (max-width: 980px) {
   .chat-panel {
+    height: auto;
     min-height: 420px;
     max-height: none;
+    overflow: visible;
+  }
+
+  .messages {
+    min-height: 280px;
+    max-height: 560px;
+    overflow-y: auto;
   }
 }
 </style>
