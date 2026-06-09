@@ -2,6 +2,8 @@ import { Module } from "@nestjs/common";
 import { BudgetAgentService } from "../../agents/budget/budget-agent.service";
 import { ChecklistAgentService } from "../../agents/checklist/checklist-agent.service";
 import { CoordinatorAgentService } from "../../agents/coordinator/coordinator-agent.service";
+import { GeminiChatService } from "../../agents/coordinator/gemini-chat.service";
+import { RuleBasedTripChatService } from "../../agents/coordinator/rule-based-trip-chat.service";
 import { OpenAiPlanningService } from "../../agents/planning/openai-planning.service";
 import { PlanningAgentService } from "../../agents/planning/planning-agent.service";
 import { StructuredPlanNormalizer } from "../../agents/planning/structured-plan-normalizer";
@@ -20,6 +22,8 @@ import { AgentOrchestratorService } from "./agent-orchestrator.service";
   providers: [
     AgentOrchestratorService,
     CoordinatorAgentService,
+    GeminiChatService,
+    RuleBasedTripChatService,
     PlanningAgentService,
     OpenAiPlanningService,
     StructuredPlanNormalizer,

@@ -31,12 +31,18 @@
     <slot name="planning" />
     <slot name="kpis" />
 
-    <slot v-if="!hasTrip" name="empty-state" />
+    <template v-if="!hasTrip">
+      <slot name="empty-state" />
+      <section class="empty-history" aria-label="Gespeicherte Reisen">
+        <slot name="travel-history" />
+      </section>
+    </template>
 
     <section v-else class="dashboard-grid" aria-label="Reiseplanungs-Dashboard">
       <div class="grid-column side-column left-column">
         <slot name="chat" />
         <slot name="agent-insights" />
+        <slot name="travel-history" />
       </div>
 
       <div class="grid-column main-column">
@@ -49,6 +55,7 @@
         <slot name="budget" />
         <slot name="weather" />
         <slot name="checklist" />
+        <slot name="export" />
       </div>
     </section>
   </main>
@@ -188,6 +195,11 @@ button:disabled {
   padding: var(--space-3) var(--space-4);
   color: var(--color-error);
   background: var(--color-error-soft);
+}
+
+.empty-history {
+  max-width: 1440px;
+  margin: 0 auto var(--space-4);
 }
 
 .dashboard-grid {

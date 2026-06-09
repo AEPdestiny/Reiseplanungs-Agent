@@ -5,7 +5,7 @@
       <span v-if="chatStore.loading" class="loading-pill">sendet</span>
     </div>
 
-    <div class="messages" aria-live="polite">
+    <div ref="messagesElement" class="messages" aria-live="polite">
       <p v-if="messages.length === 0" class="empty-state">
         Lade eine Demo-Reise und frage den Agenten nach Begründungen oder Alternativen.
       </p>
@@ -23,6 +23,7 @@
         rows="3"
         :disabled="!tripStore.tripId || chatStore.loading"
         placeholder="Frage z. B. warum Tag 2 so geplant wurde..."
+        @keydown.enter="handleEnter"
       />
       <button type="submit" :disabled="!tripStore.tripId || chatStore.loading || !draftMessage.trim()">
         Senden
@@ -33,7 +34,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { ref } from "vue";
+import { nextTick, ref, watch } from "vue";
 import { useChatStore } from "@/stores/chat.store";
 import { useTripStore } from "@/stores/trip.store";
 
@@ -41,6 +42,15 @@ const chatStore = useChatStore();
 const tripStore = useTripStore();
 const { messages } = storeToRefs(chatStore);
 const draftMessage = ref("");
+const messagesElement = ref<HTMLDivElement | null>(null);
+
+watch(
+  () => messages.value.length,
+  async () => {
+    await nextTick();
+    scrollMessagesToBottom();
+  }
+);
 
 async function sendMessage(): Promise<void> {
   if (!tripStore.tripId) {
@@ -50,6 +60,23 @@ async function sendMessage(): Promise<void> {
   const message = draftMessage.value;
   draftMessage.value = "";
   await chatStore.sendMessage(tripStore.tripId, message);
+}
+
+function handleEnter(event: KeyboardEvent): void {
+  if (event.shiftKey) {
+    return;
+  }
+
+  event.preventDefault();
+  void sendMessage();
+}
+
+function scrollMessagesToBottom(): void {
+  if (!messagesElement.value) {
+    return;
+  }
+
+  messagesElement.value.scrollTop = messagesElement.value.scrollHeight;
 }
 </script>
 

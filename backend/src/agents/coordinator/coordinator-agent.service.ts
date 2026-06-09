@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { AGENT_NAMES, type AgentInsight, type Trip } from "@travel-agent/shared";
-import { OpenAiService } from "../../modules/openai/openai.service";
+import { GeminiChatService } from "./gemini-chat.service";
+import { RuleBasedTripChatService } from "./rule-based-trip-chat.service";
 
 export interface CoordinatorChatResult {
   message: string;
@@ -10,20 +11,27 @@ export interface CoordinatorChatResult {
 
 @Injectable()
 export class CoordinatorAgentService {
-  constructor(private readonly openAiService: OpenAiService) {}
+  constructor(
+    private readonly geminiChatService: GeminiChatService,
+    private readonly ruleBasedTripChatService: RuleBasedTripChatService
+  ) {}
 
   async handleChatMessage(trip: Trip, message: string): Promise<CoordinatorChatResult> {
     const requiresProposalNotice = this.detectChangeIntent(message);
-    const openAiResponse = await this.openAiService.generateAssistantMessage({
+    const ruleBasedResponse = this.ruleBasedTripChatService.createResponse(trip, message);
+    const geminiResponse = await this.geminiChatService.generateTripAnswer({
       userMessage: message,
-      tripSummary: this.createTripSummary(trip),
-      requiresProposalNotice
+      tripSummary: this.createTripSummary(trip)
     });
+    const baseMessage = geminiResponse ?? ruleBasedResponse.message;
+    const proposalNotice = requiresProposalNotice
+      ? " Aenderungen werden nicht automatisch uebernommen. Dafuer nutzt die App einen Proposal-Flow mit Nutzerbestaetigung."
+      : "";
 
     return {
-      message: openAiResponse.message,
+      message: `${baseMessage}${proposalNotice}`,
       requiresUserConfirmation: false,
-      agentInsights: this.createChatInsights(openAiResponse.usedFallback)
+      agentInsights: this.createChatInsights(Boolean(geminiResponse), ruleBasedResponse.intent)
     };
   }
 
@@ -66,7 +74,7 @@ export class CoordinatorAgentService {
     ].join("\n");
   }
 
-  private createChatInsights(usedFallback: boolean): AgentInsight[] {
+  private createChatInsights(usedGemini: boolean, intent: string): AgentInsight[] {
     return [
       {
         agentName: AGENT_NAMES.coordinator,
@@ -75,11 +83,12 @@ export class CoordinatorAgentService {
         summary: "Nachricht analysiert"
       },
       {
-        agentName: "OpenAI Service",
-        displayLabel: "OpenAI Service",
+        agentName: usedGemini ? "GeminiChatService" : "RuleBasedTripChatService",
+        displayLabel: usedGemini ? "Gemini Chat" : "Rule-based Chat",
         status: "completed",
-        summary: usedFallback ? "Fallback-Antwort verwendet" : "Antwort generiert"
+        summary: usedGemini ? "Optionale Gemini-Antwort verwendet" : `Kostenlose regelbasierte Antwort verwendet (${intent})`
       },
+      this.ruleBasedTripChatService.createInsight(intent),
       {
         agentName: AGENT_NAMES.coordinator,
         displayLabel: "Coordinator Agent",

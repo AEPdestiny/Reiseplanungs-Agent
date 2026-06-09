@@ -36,8 +36,14 @@
     <template #checklist>
       <ChecklistPanel />
     </template>
+    <template #export>
+      <ExportPanel />
+    </template>
     <template #agent-insights>
       <AgentInsightsPanel />
+    </template>
+    <template #travel-history>
+      <TravelHistoryPanel />
     </template>
     <template #replanning>
       <ReplanningProposalPanel />
@@ -55,10 +61,12 @@ import ChecklistPanel from "@/components/checklist/ChecklistPanel.vue";
 import DashboardKpiCards from "@/components/dashboard/DashboardKpiCards.vue";
 import DashboardLayout from "@/components/dashboard/DashboardLayout.vue";
 import StartEmptyState from "@/components/dashboard/StartEmptyState.vue";
+import ExportPanel from "@/components/export/ExportPanel.vue";
 import ReplanningProposalPanel from "@/components/replanning/ReplanningProposalPanel.vue";
 import DayPlanPanel from "@/components/trip/DayPlanPanel.vue";
 import MapPanel from "@/components/trip/MapPanel.vue";
 import TripPlanningForm from "@/components/trip/TripPlanningForm.vue";
+import TravelHistoryPanel from "@/components/trip/TravelHistoryPanel.vue";
 import WeatherForecastPanel from "@/components/weather/WeatherForecastPanel.vue";
 import { healthCheck } from "@/services/travel-api.service";
 import { useProposalStore } from "@/stores/proposal.store";
