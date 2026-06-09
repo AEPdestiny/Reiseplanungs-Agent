@@ -82,7 +82,7 @@ OpenAI ist technisch im Backend vorbereitet:
 - `OpenAiService` kapselt OpenAI Responses API Aufrufe und bietet Fallbacks.
 - `OpenAiPlanningService` kann strukturierte Planvorschlaege anfragen.
 - `StructuredPlanNormalizer` validiert und normalisiert optionale OpenAI-Ausgaben.
-- `TripPlanFactory` bleibt Mock-/Fallback-Planerzeugung.
+- `TripPlanFactory` bleibt Demo-/technische Mock-Planerzeugung und ist nicht der Standardpfad fuer eigene Reisen.
 
 Fuer die kostenfreie MVP-2-Zielarchitektur ist OpenAI kein Pflichtbestandteil. OpenAI bleibt optional fuer Chat, Begruendungen, Textveredelung und experimentelle AI Structured Planning Pfade. Der Standardpfad fuer echte Reiseplanung soll ueber kostenfreie Provider und regelbasierte Agentenlogik laufen.
 
@@ -98,6 +98,7 @@ Fuer die kostenfreie MVP-2-Zielarchitektur ist OpenAI kein Pflichtbestandteil. O
 | Routing | OSRM | Optional fuer Routen; Demo Server nur fuer nicht-produktive Tests, spaeter selbst hostbar |
 
 Provider sollen ueber klare Interfaces angebunden werden, damit Mock-Daten, Free APIs und spaetere produktive Provider austauschbar bleiben.
+Die Standardplanung nutzt zuerst Wikidata, ergaenzt bei Bedarf Wikipedia GeoSearch und verwendet OpenTripMap nur optional, wenn lokal `OPENTRIPMAP_API_KEY` gesetzt ist. `TripPlanFactory` bleibt fuer die Berlin-Demo und technische Fallbacks im Repository, ist aber nicht mehr der Aktivitaetsfallback fuer eigene Reiseplanung.
 
 ## Tech Stack
 
@@ -251,7 +252,7 @@ _Bild folgt_
 | --- | --- |
 | `GET /api/health` | Prueft, ob das Backend erreichbar ist. |
 | `POST /api/trips/demo` | Laedt die feste Berlin-Demo-Reise fuer MVP 1. |
-| `POST /api/trips/plan` | Erstellt einen initialen Plan aus einer Nutzeranfrage; aktuell mit optionalem OpenAI Structured Planning und Mock-Fallback. |
+| `POST /api/trips/plan` | Erstellt einen initialen Plan aus einer Nutzeranfrage; Standardpfad mit Wikidata, Wikipedia und optional OpenTripMap, ohne Berlin-Mock-Aktivitaeten fuer eigene Reisen. |
 | `GET /api/trips/:tripId` | Liefert den aktuellen Trip-Zustand mit aktivem Plan, Budget, Checkliste und pending Proposal. |
 | `POST /api/trips/:tripId/chat` | Sendet eine Chat-Nachricht an den Coordinator Agent und liefert Antwort, Plan, Proposal-Status und Agent Insights. |
 | `POST /api/trips/:tripId/simulate-weather` | Simuliert ein Wetterereignis und erzeugt bei Bedarf ein pending Replanning Proposal. |

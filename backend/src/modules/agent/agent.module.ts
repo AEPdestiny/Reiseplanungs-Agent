@@ -5,7 +5,6 @@ import { CoordinatorAgentService } from "../../agents/coordinator/coordinator-ag
 import { OpenAiPlanningService } from "../../agents/planning/openai-planning.service";
 import { PlanningAgentService } from "../../agents/planning/planning-agent.service";
 import { StructuredPlanNormalizer } from "../../agents/planning/structured-plan-normalizer";
-import { TripPlanFactory } from "../../agents/planning/trip-plan.factory";
 import { RecommendationAgentService } from "../../agents/recommendation/recommendation-agent.service";
 import { ReplanningAgentService } from "../../agents/replanning/replanning-agent.service";
 import { BudgetModule } from "../budget/budget.module";
@@ -24,7 +23,6 @@ import { AgentOrchestratorService } from "./agent-orchestrator.service";
     PlanningAgentService,
     OpenAiPlanningService,
     StructuredPlanNormalizer,
-    TripPlanFactory,
     RecommendationAgentService,
     BudgetAgentService,
     ReplanningAgentService,

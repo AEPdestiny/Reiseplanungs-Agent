@@ -2,16 +2,18 @@
   <main class="dashboard-shell">
     <header class="dashboard-header">
       <div>
-        <p class="eyebrow">MVP 1 Demo</p>
+        <p class="eyebrow">MVP 2 Free-First Demo</p>
         <h1>Reiseplanungs-Agent</h1>
-        <p class="subtitle">GenAI-gestuetzte Reiseplanung mit Chat, Tagesplan, Budget und Proposal Flow.</p>
+        <p class="subtitle">
+          Kostenfreie Reiseplanung mit Free APIs, Karte, Budget und proposal-basiertem Replanning.
+        </p>
       </div>
       <div class="dashboard-actions">
         <span class="api-status" :class="apiStatus">
           API: {{ apiStatusLabel }}
         </span>
         <button type="button" :disabled="isLoadingDemo" @click="$emit('load-demo')">
-          {{ isLoadingDemo ? "Demo wird geladen" : "Demo-Reise laden" }}
+          {{ isLoadingDemo ? "Demo wird geladen" : "Demo-Reise Berlin starten" }}
         </button>
         <button
           type="button"
@@ -27,8 +29,11 @@
     <p v-if="error" class="error-banner">{{ error }}</p>
 
     <slot name="planning" />
+    <slot name="kpis" />
 
-    <section class="dashboard-grid" aria-label="Reiseplanungs-Dashboard">
+    <slot v-if="!hasTrip" name="empty-state" />
+
+    <section v-else class="dashboard-grid" aria-label="Reiseplanungs-Dashboard">
       <div class="grid-column side-column">
         <slot name="chat" />
         <slot name="agent-insights" />
@@ -37,11 +42,11 @@
       <div class="grid-column main-column">
         <slot name="replanning" />
         <slot name="day-plan" />
+        <slot name="route" />
       </div>
 
       <div class="grid-column side-column">
         <slot name="budget" />
-        <slot name="route" />
         <slot name="checklist" />
       </div>
     </section>

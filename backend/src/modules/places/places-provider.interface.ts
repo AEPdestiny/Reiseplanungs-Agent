@@ -1,5 +1,7 @@
 export type PlaceCategory = "museum" | "landmark" | "park" | "historic_site" | "food" | "shopping" | "viewpoint";
-export type PlaceSource = "wikidata";
+import type { GeocodingResult } from "../geocoding/geocoding-provider.interface";
+
+export type PlaceSource = "wikidata" | "wikipedia" | "opentripmap" | "generic";
 
 export const PLACES_PROVIDER = Symbol("PLACES_PROVIDER");
 
@@ -17,5 +19,5 @@ export interface PlaceResult {
 }
 
 export interface PlacesProvider {
-  getPlacesForDestination(destination: string, interests: string[]): Promise<PlaceResult[]>;
+  getPlacesForDestination(destination: string, interests: string[], geocoding?: GeocodingResult | null): Promise<PlaceResult[]>;
 }

@@ -12,6 +12,12 @@
     <template #planning>
       <TripPlanningForm :is-planning="tripStore.planningLoading" @submit="createPlannedTrip" />
     </template>
+    <template #kpis>
+      <DashboardKpiCards />
+    </template>
+    <template #empty-state>
+      <StartEmptyState />
+    </template>
     <template #chat>
       <ChatPanel />
     </template>
@@ -22,7 +28,7 @@
       <BudgetPanel />
     </template>
     <template #route>
-      <RouteMapPanel />
+      <MapPanel />
     </template>
     <template #checklist>
       <ChecklistPanel />
@@ -43,10 +49,12 @@ import AgentInsightsPanel from "@/components/agent-insights/AgentInsightsPanel.v
 import BudgetPanel from "@/components/budget/BudgetPanel.vue";
 import ChatPanel from "@/components/chat/ChatPanel.vue";
 import ChecklistPanel from "@/components/checklist/ChecklistPanel.vue";
+import DashboardKpiCards from "@/components/dashboard/DashboardKpiCards.vue";
 import DashboardLayout from "@/components/dashboard/DashboardLayout.vue";
+import StartEmptyState from "@/components/dashboard/StartEmptyState.vue";
 import ReplanningProposalPanel from "@/components/replanning/ReplanningProposalPanel.vue";
 import DayPlanPanel from "@/components/trip/DayPlanPanel.vue";
-import RouteMapPanel from "@/components/trip/RouteMapPanel.vue";
+import MapPanel from "@/components/trip/MapPanel.vue";
 import TripPlanningForm from "@/components/trip/TripPlanningForm.vue";
 import { healthCheck } from "@/services/travel-api.service";
 import { useProposalStore } from "@/stores/proposal.store";

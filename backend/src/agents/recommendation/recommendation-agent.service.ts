@@ -7,6 +7,21 @@ import { ActivityScoringService } from "../../modules/recommendation/activity-sc
 export class RecommendationAgentService {
   constructor(private readonly activityScoringService: ActivityScoringService) {}
 
+  createGenericDestinationPlan(request: TripRequest, weather: WeatherSummary[]): TravelDay[] {
+    return Array.from({ length: request.durationDays }, (_, index) => {
+      const dayNumber = index + 1;
+      const dayWeather = weather.find((summary) => summary.dayNumber === dayNumber);
+      const dayActivities = this.createGenericActivitiesForDay(request, dayNumber, dayWeather);
+
+      return {
+        dayNumber,
+        title: `${request.destination}: flexibler Orientierungstag ${dayNumber}`,
+        weather: dayWeather,
+        timeSlots: this.createTimeSlots(dayActivities, dayNumber, request, dayWeather)
+      };
+    });
+  }
+
   createPlanFromPlaces(request: TripRequest, places: PlaceResult[], weather: WeatherSummary[]): TravelDay[] | null {
     if (places.length < 3) {
       return null;
@@ -108,6 +123,70 @@ export class RecommendationAgentService {
     });
   }
 
+  private createGenericActivitiesForDay(request: TripRequest, dayNumber: number, weatherSummary?: WeatherSummary): Activity[] {
+    const weatherCondition = weatherSummary?.condition.toLowerCase() ?? "";
+    const prefersIndoor = weatherCondition.includes("rain") || weatherCondition.includes("regen");
+    const baseId = this.normalizeIdPart(request.destination);
+
+    const activities: Activity[] = [
+      {
+        id: `generic_${baseId}_orientation_${dayNumber}`,
+        name: `${request.destination} Orientierung und Stadtzentrum`,
+        category: "sightseeing",
+        description: `Starte mit einer kompakten Orientierung rund um das Zentrum von ${request.destination}.`,
+        location: {
+          name: `${request.destination} Zentrum`,
+          area: request.destination
+        },
+        estimatedCostPerPerson: 0,
+        estimatedCostTotal: 0,
+        durationMinutes: 90,
+        indoorOutdoor: prefersIndoor ? "mixed" : "outdoor",
+        tags: ["orientation", "sehenswuerdigkeiten", prefersIndoor ? "rain_flexible" : "outdoor"],
+        reasoning: `Generischer Real-Data-Minimalplan fuer ${request.destination}, weil nicht genug echte POIs verfuegbar waren.`,
+        source: "external_api"
+      },
+      {
+        id: `generic_${baseId}_break_${dayNumber}`,
+        name: `${request.destination} Essenspause im passenden Viertel`,
+        category: "restaurant",
+        description: `Plane eine flexible Essenspause in ${request.destination}; konkrete Restaurants koennen spaeter durch Places-Daten ersetzt werden.`,
+        location: {
+          name: `${request.destination} Restaurantbereich`,
+          area: request.destination
+        },
+        estimatedCostPerPerson: 24,
+        estimatedCostTotal: 24 * request.numberOfPeople,
+        durationMinutes: 90,
+        indoorOutdoor: "indoor",
+        tags: ["food", "gutes essen", "indoor"],
+        reasoning: "Essenspause als generischer Bestandteil eines realistischen Tagesplans.",
+        source: "external_api"
+      },
+      {
+        id: `generic_${baseId}_flex_${dayNumber}`,
+        name: prefersIndoor ? `${request.destination} wetterfeste freie Zeit` : `${request.destination} Spaziergang und freie Zeit`,
+        category: prefersIndoor ? "activity" : "walk",
+        description: prefersIndoor
+          ? `Halte Zeit fuer wetterfeste Innenaktivitaeten oder spontane lokale Empfehlungen in ${request.destination} frei.`
+          : `Nutze freie Zeit fuer einen Spaziergang, Aussichtspunkte oder spontane lokale Empfehlungen in ${request.destination}.`,
+        location: {
+          name: `${request.destination} flexibel`,
+          area: request.destination
+        },
+        estimatedCostPerPerson: prefersIndoor ? 10 : 0,
+        estimatedCostTotal: (prefersIndoor ? 10 : 0) * request.numberOfPeople,
+        durationMinutes: 90,
+        indoorOutdoor: prefersIndoor ? "indoor" : "outdoor",
+        tags: prefersIndoor ? ["rain_safe", "indoor", "flexible"] : ["spaziergaenge", "outdoor", "flexible"],
+        reasoning: "Flexibler Slot verhindert falsche Ortsbehauptungen, wenn externe POI-Daten zu duenn sind.",
+        source: "external_api"
+      }
+    ];
+
+    return activities;
+  }
+
   private mapPlaceCategory(category: PlaceCategory): ActivityCategory {
     const categoryMap: Record<PlaceCategory, ActivityCategory> = {
       museum: "museum",
@@ -134,5 +213,15 @@ export class RecommendationAgentService {
     };
 
     return durationByCategory[category];
+  }
+
+  private normalizeIdPart(value: string): string {
+    return value
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
   }
 }

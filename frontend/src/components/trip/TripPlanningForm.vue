@@ -56,7 +56,7 @@
 
       <button type="submit" class="submit-button" :disabled="isPlanning" @click.prevent="submitForm">
         <span v-if="isPlanning" class="spinner" aria-hidden="true"></span>
-        {{ isPlanning ? "Reise wird geplant..." : "Plan erstellen" }}
+        {{ isPlanning ? "Reise wird geplant..." : "Eigene Reise planen" }}
       </button>
     </form>
   </section>

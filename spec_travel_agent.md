@@ -138,7 +138,7 @@ Enthalten:
 - NestJS Backend
 - eigene Agenten-Orchestrierung ohne LangChain und ohne LangGraph
 - `POST /api/trips/demo` fuer die feste Berlin-Demo
-- `POST /api/trips/plan` fuer freie Reiseanfragen mit optionalem OpenAI Structured Planning und Mock-Fallback
+- `POST /api/trips/plan` fuer freie Reiseanfragen mit Wikidata, Wikipedia und optional OpenTripMap als Real-POI-Quellen; bei zu wenigen POIs wird ein generischer Zielplan ohne Berlin-Mock-Aktivitaeten erzeugt
 - Reiseplanung nach Budget
 - Tagesplaene fuer mehrere Tage
 - Restaurant-, Museums- und Aktivitaetsvorschlaege mit Mock-Daten
@@ -604,12 +604,12 @@ Die Anwendung besteht aus vier Hauptschichten:
   - orchestriert initiale Planung
   - nutzt Wetterdaten
   - versucht aktuell optional OpenAI Structured Planning
-  - nutzt TripPlanFactory als Mock-/Fallback-Pfad
+  - nutzt Free-API-Places als Standardpfad und generische Zielplanung, wenn nicht genug echte POIs verfuegbar sind
   - soll in MVP 2 Free API Provider als priorisierten Standardpfad nutzen
 
 - `TripPlanFactory`
-  - erzeugt Mock-/Fallback-Plaene
-  - bleibt bewusst Mock-/Fallback-orientiert
+  - erzeugt Demo-/Mock-Plaene fuer die Berlin-Demo und technische Fallbacks
+  - ist nicht mehr der Standard-Aktivitaetsfallback fuer eigene Reiseplanung ueber `POST /api/trips/plan`
 
 - `OpenAiPlanningService`
   - erzeugt optionale strukturierte Planvorschlaege ueber OpenAI
@@ -1494,8 +1494,8 @@ Massnahmen:
 | --- | --- | --- | --- |
 | Open-Meteo | Wetterdaten fuer Planung und Replanning | MVP 2 geplant | priorisierter Free-API-Wetterprovider |
 | Nominatim / OpenStreetMap | Geocoding und Ortsauflösung | MVP 2 geplant | Zielort, Koordinaten und OSM-Bezug; Nutzung muss respektvoll mit Rate Limits erfolgen |
-| OpenTripMap | POIs, Sehenswuerdigkeiten und Aktivitaeten | MVP 2 geplant | kostenfrei nutzbarer POI-Provider; API-Key/Free-Tier-Bedingungen vor Implementierung pruefen |
-| Wikidata / Wikipedia | Wissensdaten und POI-Ergaenzungen | MVP 2 geplant | Beschreibungen, Kontext und Plausibilisierung von Orten |
+| OpenTripMap | POIs, Sehenswuerdigkeiten und Aktivitaeten | MVP 2 optional integriert | wird nur verwendet, wenn lokal `OPENTRIPMAP_API_KEY` gesetzt ist; echte Keys werden nicht dokumentiert oder committed |
+| Wikidata / Wikipedia | Wissensdaten und POI-Ergaenzungen | MVP 2 integriert | Standardplanung nutzt Wikidata zuerst und ergaenzt bei zu wenigen Treffern Wikipedia GeoSearch |
 | Leaflet + OpenStreetMap | Kartenansicht im Frontend | MVP 2 geplant | freie Kartenbasis fuer RouteMapPanel-Ausbau |
 | OSRM | Routing | optional MVP 2/3 | Demo Server nur fuer Tests; spaeter selbst hostbar |
 | OpenAI Responses API | Chatantworten, Begruendungen, Textveredelung und optionale AI Structured Planning Experimente | optional vorbereitet | kein Pflichtbestandteil; Fallback ohne API-Key; `OpenAiPlanningService` und `StructuredPlanNormalizer` dienen als optionaler Guardrail-Pfad |
@@ -1642,7 +1642,7 @@ Die Free-API-Strategie reduziert Kostenrisiken, verbessert Reproduzierbarkeit fu
 - MVP 2 priorisiert Provider Interfaces und Free API Adapter.
 - `OpenAiPlanningService` bleibt optional und darf den Standardpfad nicht erzwingen.
 - `StructuredPlanNormalizer` bleibt Guardrail fuer optionale OpenAI-Ausgaben.
-- `TripPlanFactory` bleibt Mock-/Fallback-Pfad.
+- `TripPlanFactory` bleibt Demo-/technischer Mock-Pfad und ist nicht mehr der Standardfallback fuer eigene Reiseplanung.
 - Budgetberechnung bleibt deterministisch im `BudgetService`.
 - Externe Provider muessen Rate Limits, Fehlerfaelle und Fallbacks sauber behandeln.
 
@@ -1792,7 +1792,7 @@ sequenceDiagram
 - Karte/Routenuebersicht als MVP-1-Schema darstellen
 - Checkliste interaktiv machen
 - `POST /api/trips/plan` fuer freie Reiseanfragen aktivieren
-- `TripPlanFactory` als Mock-Fallback erhalten
+- `TripPlanFactory` fuer Berlin-Demo und technische Mock-Szenarien erhalten
 
 ### Phase 7: Dokumentation auf kostenfreie MVP-2-Architektur ausrichten
 

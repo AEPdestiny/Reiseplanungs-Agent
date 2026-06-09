@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import type { GeocodingResult } from "../../modules/geocoding/geocoding-provider.interface";
 import type { PlaceCategory, PlaceResult, PlacesProvider } from "../../modules/places/places-provider.interface";
 
 interface WikidataBindingValue {
@@ -25,7 +26,11 @@ export class WikidataPlacesProvider implements PlacesProvider {
   private readonly timeoutMs = 8000;
   private readonly userAgent = "Reiseplanungs-Agent/0.1 (https://github.com/AEPdestiny/Reiseplanungs-Agent)";
 
-  async getPlacesForDestination(destination: string, _interests: string[]): Promise<PlaceResult[]> {
+  async getPlacesForDestination(
+    destination: string,
+    _interests: string[],
+    _geocoding?: GeocodingResult | null
+  ): Promise<PlaceResult[]> {
     const normalizedDestination = destination.trim();
 
     if (!normalizedDestination) {

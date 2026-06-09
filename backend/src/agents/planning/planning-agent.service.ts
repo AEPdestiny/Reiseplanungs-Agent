@@ -13,7 +13,6 @@ import { PlacesService } from "../../modules/places/places.service";
 import { WeatherService } from "../../modules/weather/weather.service";
 import { OpenAiPlanningService } from "./openai-planning.service";
 import { StructuredPlanNormalizer } from "./structured-plan-normalizer";
-import { TripPlanFactory } from "./trip-plan.factory";
 
 export interface PlanningContext {
   tripId: string;
@@ -40,8 +39,7 @@ export class PlanningAgentService {
     private readonly placesService: PlacesService,
     private readonly recommendationAgentService: RecommendationAgentService,
     private readonly openAiPlanningService: OpenAiPlanningService,
-    private readonly structuredPlanNormalizer: StructuredPlanNormalizer,
-    private readonly tripPlanFactory: TripPlanFactory
+    private readonly structuredPlanNormalizer: StructuredPlanNormalizer
   ) {}
 
   async createInitialPlanFromRequest(request: TripRequest, context: PlanningContext): Promise<PlanningResult> {
@@ -50,7 +48,10 @@ export class PlanningAgentService {
     const weatherSourceSummary = this.weatherService.getWeatherSourceSummary(weather);
     const placesLookup = await this.placesService.getPlacesForDestination(request.destination, request.interests);
     const placesSourceSummary = this.placesService.getPlacesSourceSummary(placesLookup);
-    const placesPlan = this.recommendationAgentService.createPlanFromPlaces(request, placesLookup.places, weather);
+    const detailedPlacesSourceSummaries = this.placesService.getDetailedSourceSummaries(placesLookup);
+    const placesPlan = placesLookup.hasMinimumPlaces
+      ? this.recommendationAgentService.createPlanFromPlaces(request, placesLookup.places, weather)
+      : null;
 
     if (placesPlan) {
       return {
@@ -72,10 +73,11 @@ export class PlanningAgentService {
           weatherSourceSummary,
           undefined,
           placesSourceSummary,
+          detailedPlacesSourceSummaries,
           true
         ),
         messageParts: [`Ich habe echte POI-Daten fuer ${request.destination} genutzt und daraus einen Tagesplan erstellt.`],
-        warnings: ["Places-Daten stammen aus Wikidata; Kosten bleiben grobe Planungsschaetzungen."],
+        warnings: ["Places-Daten stammen aus kostenfreien Quellen; Kosten bleiben grobe Planungsschaetzungen."],
         usedDestinationFallback: false,
         usedOpenAiPlanning: false
       };
@@ -89,16 +91,17 @@ export class PlanningAgentService {
       return optionalOpenAiPlan.result;
     }
 
-    const plan = this.tripPlanFactory.createMockPlan(request, weather);
+    const genericPlan = this.recommendationAgentService.createGenericDestinationPlan(request, weather);
     const fallbackReason =
-      optionalOpenAiPlan?.fallbackReason ?? "Free-API-Places lieferten keinen nutzbaren Plan; Mock-Fallback wurde verwendet.";
+      optionalOpenAiPlan?.fallbackReason ??
+      "Free-API-Places lieferten zu wenige POIs; generischer Zielplan ohne Berlin-Mock-Aktivitaeten wurde verwendet.";
 
     return {
-      days: plan.days,
-      checklist: this.createPlanningChecklist(context.tripId, plan.usedDestinationFallback),
+      days: genericPlan,
+      checklist: this.createPlanningChecklist(context.tripId, true),
       agentTrace: this.createPlanningAgentTrace(
         context.timestamp,
-        plan.usedDestinationFallback,
+        true,
         false,
         geocodingSourceSummary,
         weatherSourceSummary,
@@ -107,18 +110,19 @@ export class PlanningAgentService {
         fallbackReason
       ),
       agentInsights: this.createPlanningAgentInsights(
-        plan.usedDestinationFallback,
+        true,
         false,
         geocodingSourceSummary,
         weatherSourceSummary,
         fallbackReason,
         placesSourceSummary,
+        detailedPlacesSourceSummaries,
         false,
         this.openAiPlanningEnabled
       ),
-      messageParts: plan.messageParts,
-      warnings: [fallbackReason, ...plan.warnings],
-      usedDestinationFallback: plan.usedDestinationFallback,
+      messageParts: [`Ich habe einen generischen Minimalplan fuer ${request.destination} erstellt.`],
+      warnings: [fallbackReason],
+      usedDestinationFallback: true,
       usedOpenAiPlanning: false
     };
   }
@@ -159,6 +163,7 @@ export class PlanningAgentService {
             weatherSourceSummary,
             undefined,
             placesSourceSummary,
+            [placesSourceSummary],
             false,
             true
           ),
@@ -204,7 +209,7 @@ export class PlanningAgentService {
         {
           id: "review_mock_fallback",
           label: usedDestinationFallback
-            ? "Mock-Fallback pruefen: Aktivitaeten basieren aktuell auf Berlin-Daten"
+            ? "Generischen Zielplan pruefen und bei Bedarf lokale POIs ergaenzen"
             : "Aktivitaeten und Interessen final pruefen",
           category: "preparation",
           completed: false,
@@ -220,7 +225,7 @@ export class PlanningAgentService {
     usedOpenAiPlanning: boolean,
     geocodingSourceSummary: string,
     weatherSourceSummary: string,
-    placesSourceSummary = "Places Source: Mock Fallback",
+    placesSourceSummary = "Places Source: Generic Destination Plan",
     usedPlacesPlanning = false,
     fallbackReason?: string
   ): AgentTraceEntry[] {
@@ -235,7 +240,7 @@ export class PlanningAgentService {
           ? "create_places_plan"
           : usedOpenAiPlanning
             ? "create_openai_structured_plan"
-            : "create_mock_plan",
+            : "create_generic_destination_plan",
         summary: this.createPlanningSummary(usedDestinationFallback, usedOpenAiPlanning, fallbackReason, usedPlacesPlanning),
         timestamp
       },
@@ -256,16 +261,20 @@ export class PlanningAgentService {
     geocodingSourceSummary: string,
     weatherSourceSummary: string,
     fallbackReason?: string,
-    placesSourceSummary = "Places Source: Mock Fallback",
+    placesSourceSummary = "Places Source: Generic Destination Plan",
+    detailedPlacesSourceSummaries: string[] = [placesSourceSummary],
     usedPlacesPlanning = false,
     openAiPlanningAttempted = usedOpenAiPlanning
   ): AgentInsight[] {
     const insights: AgentInsight[] = [
       { agentName: AGENT_NAMES.coordinator, displayLabel: "Coordinator Agent", status: "completed", summary: "Reiseanfrage validiert" },
       { agentName: "Geocoding Provider", displayLabel: "Geocoding Provider", status: "completed", summary: geocodingSourceSummary },
-      { agentName: "Weather Provider", displayLabel: "Weather Provider", status: "completed", summary: weatherSourceSummary },
-      { agentName: "Places Provider", displayLabel: "Places Provider", status: "completed", summary: placesSourceSummary }
+      { agentName: "Weather Provider", displayLabel: "Weather Provider", status: "completed", summary: weatherSourceSummary }
     ];
+
+    for (const summary of detailedPlacesSourceSummaries) {
+      insights.push({ agentName: "Places Provider", displayLabel: "Places Provider", status: "completed", summary });
+    }
 
     if (openAiPlanningAttempted || usedOpenAiPlanning) {
       insights.push({
@@ -284,10 +293,10 @@ export class PlanningAgentService {
         displayLabel: "Planning Agent",
         status: "completed",
         summary: usedPlacesPlanning
-          ? "Plan aus Free-API-Places erstellt"
+          ? "Planning Agent: Real Data Plan erstellt"
           : usedOpenAiPlanning
             ? "AI-generierter Plan erstellt"
-            : "Plan mit Mock-Fallback erstellt"
+            : "Planning Agent: Generic Destination Plan erstellt"
       },
       {
         agentName: AGENT_NAMES.recommendation,
@@ -309,7 +318,7 @@ export class PlanningAgentService {
     usedPlacesPlanning = false
   ): string {
     if (usedPlacesPlanning) {
-      return "Plan aus Wikidata-POIs und deterministischem Recommendation Scoring erstellt";
+      return "Planning Agent: Real Data Plan erstellt";
     }
 
     if (usedOpenAiPlanning) {
@@ -317,7 +326,7 @@ export class PlanningAgentService {
     }
 
     return usedDestinationFallback
-      ? `Mock-Plan mit transparentem Berlin-Datenfallback erstellt (${fallbackReason ?? "OpenAI nicht genutzt"})`
-      : `Mock-Plan aus vorhandenen Zieldaten erstellt (${fallbackReason ?? "OpenAI nicht genutzt"})`;
+      ? `Planning Agent: Generic Destination Plan erstellt (${fallbackReason ?? "keine ausreichenden echten POIs"})`
+      : `Planning Agent: Real Data Plan erstellt (${fallbackReason ?? "Free APIs genutzt"})`;
   }
 }
