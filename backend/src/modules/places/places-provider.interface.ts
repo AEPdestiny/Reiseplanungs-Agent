@@ -15,6 +15,7 @@ export interface PlaceResult {
   longitude?: number;
   estimatedCostPerPerson?: number;
   indoor?: boolean;
+  qualityScore?: number;
   source: PlaceSource;
 }
 

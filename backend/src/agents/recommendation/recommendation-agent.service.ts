@@ -29,14 +29,19 @@ export class RecommendationAgentService {
 
     const recommendedActivities = places
       .map((place) => this.createActivityFromPlace(place, request))
-      .sort((left, right) => left.name.localeCompare(right.name));
+      .sort((left, right) => this.getQualityScore(right) - this.getQualityScore(left) || left.name.localeCompare(right.name));
 
     const days: TravelDay[] = [];
+    const usedActivityIds = new Set<string>();
 
     for (let dayNumber = 1; dayNumber <= request.durationDays; dayNumber += 1) {
       const dayWeather = weather.find((summary) => summary.dayNumber === dayNumber);
-      const dayActivities = this.pickActivitiesForDay(recommendedActivities, dayNumber, request, dayWeather);
+      const dayActivities = this.pickActivitiesForDay(recommendedActivities, dayNumber, request, dayWeather, usedActivityIds);
       const scoredTimeSlots = this.createTimeSlots(dayActivities, dayNumber, request, dayWeather);
+
+      for (const activity of dayActivities) {
+        usedActivityIds.add(activity.id);
+      }
 
       days.push({
         dayNumber,
@@ -67,7 +72,7 @@ export class RecommendationAgentService {
       estimatedCostTotal: estimatedCostPerPerson * request.numberOfPeople,
       durationMinutes: this.durationForCategory(place.category),
       indoorOutdoor: place.indoor === undefined ? "mixed" : place.indoor ? "indoor" : "outdoor",
-      tags: Array.from(new Set([place.category, ...place.tags])),
+      tags: Array.from(new Set([place.category, `quality:${place.qualityScore ?? 0}`, ...place.tags])),
       reasoning: `${place.name} wurde aus ${place.source} als passende Aktivitaet fuer ${request.destination} uebernommen.`,
       source: "external_api"
     };
@@ -77,23 +82,25 @@ export class RecommendationAgentService {
     activities: Activity[],
     dayNumber: number,
     request: TripRequest,
-    weatherSummary?: WeatherSummary
+    weatherSummary: WeatherSummary | undefined,
+    usedActivityIds: Set<string>
   ): Activity[] {
     const scoredActivities = activities
+      .filter((activity) => !usedActivityIds.has(activity.id))
       .map((activity) => ({
         activity,
-        score: this.activityScoringService.calculateActivityScore(activity, request, weatherSummary, request.destination)
+        score: this.activityScoringService.calculateActivityScore(activity, request, weatherSummary, request.destination),
+        finalScore: this.calculateFinalRecommendationScore(activity, request, weatherSummary)
       }))
-      .sort((left, right) => right.score.overallScore - left.score.overallScore || left.activity.name.localeCompare(right.activity.name));
+      .sort((left, right) => right.finalScore - left.finalScore || left.activity.name.localeCompare(right.activity.name));
 
-    const offset = (dayNumber - 1) * 3;
-    const picked = scoredActivities.slice(offset, offset + 3).map((entry) => entry.activity);
+    const picked = this.pickDiverseActivities(scoredActivities, 3).map((entry) => entry.activity);
 
     if (picked.length >= 3) {
       return picked;
     }
 
-    return [...picked, ...scoredActivities.slice(0, 3 - picked.length).map((entry) => entry.activity)];
+    return [...picked, ...this.pickDiverseActivities(scoredActivities, 3 - picked.length).map((entry) => entry.activity)];
   }
 
   private createTimeSlots(
@@ -199,6 +206,49 @@ export class RecommendationAgentService {
     };
 
     return categoryMap[category];
+  }
+
+  private calculateFinalRecommendationScore(activity: Activity, request: TripRequest, weatherSummary?: WeatherSummary): number {
+    const activityScore = this.activityScoringService.calculateActivityScore(activity, request, weatherSummary, request.destination);
+    const qualityScore = this.getQualityScore(activity);
+    const budgetScore = activity.estimatedCostPerPerson <= request.budgetTotal / Math.max(request.durationDays * request.numberOfPeople, 1) ? 8 : 0;
+
+    return qualityScore + activityScore.interestMatch * 20 + activityScore.weatherMatch * 15 + activityScore.budgetMatch * 10 + budgetScore;
+  }
+
+  private pickDiverseActivities<T extends { activity: Activity }>(entries: T[], count: number): T[] {
+    const selected: T[] = [];
+    const usedCategories = new Set<ActivityCategory>();
+
+    for (const entry of entries) {
+      if (selected.length >= count) {
+        break;
+      }
+
+      if (!usedCategories.has(entry.activity.category)) {
+        selected.push(entry);
+        usedCategories.add(entry.activity.category);
+      }
+    }
+
+    for (const entry of entries) {
+      if (selected.length >= count) {
+        break;
+      }
+
+      if (!selected.includes(entry)) {
+        selected.push(entry);
+      }
+    }
+
+    return selected;
+  }
+
+  private getQualityScore(activity: Activity): number {
+    const qualityTag = activity.tags.find((tag) => tag.startsWith("quality:"));
+    const value = qualityTag ? Number(qualityTag.replace("quality:", "")) : Number.NaN;
+
+    return Number.isFinite(value) ? value : 0;
   }
 
   private durationForCategory(category: PlaceCategory): number {

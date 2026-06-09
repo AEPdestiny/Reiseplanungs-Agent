@@ -4,6 +4,7 @@ import type { PlaceResult, PlaceSource } from "./places-provider.interface";
 import { OpenTripMapPlacesProvider } from "../../providers/places/opentripmap-places.provider";
 import { WikidataPlacesProvider } from "../../providers/places/wikidata-places.provider";
 import { WikipediaPlacesProvider } from "../../providers/places/wikipedia-places.provider";
+import { PlaceRankingService } from "./place-ranking.service";
 
 export type PlacesSource =
   | "wikidata"
@@ -27,7 +28,8 @@ export class PlacesService {
     private readonly geocodingService: GeocodingService,
     private readonly wikidataPlacesProvider: WikidataPlacesProvider,
     private readonly wikipediaPlacesProvider: WikipediaPlacesProvider,
-    private readonly openTripMapPlacesProvider: OpenTripMapPlacesProvider
+    private readonly openTripMapPlacesProvider: OpenTripMapPlacesProvider,
+    private readonly placeRankingService: PlaceRankingService
   ) {}
 
   async getPlacesForDestination(destination: string, interests: string[]): Promise<PlacesLookupResult> {
@@ -35,16 +37,13 @@ export class PlacesService {
     const allPlaces: PlaceResult[] = [];
 
     allPlaces.push(...(await this.wikidataPlacesProvider.getPlacesForDestination(destination, interests, geocoding)));
+    allPlaces.push(...(await this.wikipediaPlacesProvider.getPlacesForDestination(destination, interests, geocoding)));
 
-    if (allPlaces.length < this.minRealPlaces) {
-      allPlaces.push(...(await this.wikipediaPlacesProvider.getPlacesForDestination(destination, interests, geocoding)));
-    }
-
-    if (allPlaces.length < this.minRealPlaces && this.openTripMapPlacesProvider.isEnabled()) {
+    if (this.deduplicatePlaces(allPlaces).length < this.minRealPlaces && this.openTripMapPlacesProvider.isEnabled()) {
       allPlaces.push(...(await this.openTripMapPlacesProvider.getPlacesForDestination(destination, interests, geocoding)));
     }
 
-    const places = this.deduplicatePlaces(allPlaces).slice(0, 24);
+    const places = this.placeRankingService.rankPlaces(this.deduplicatePlaces(allPlaces));
     const sources = this.getSources(places);
     const hasMinimumPlaces = places.length >= this.minRealPlaces;
 
@@ -81,7 +80,7 @@ export class PlacesService {
       return ["Places Source: Generic Destination Plan"];
     }
 
-    return result.sources.map((source) => {
+    return ["Places ranked by quality", "Top POIs selected", ...result.sources.map((source) => {
       if (source === "opentripmap") {
         return "Places Source: OpenTripMap";
       }
@@ -91,7 +90,7 @@ export class PlacesService {
       }
 
       return "Places Source: Wikidata";
-    });
+    })];
   }
 
   private deduplicatePlaces(places: PlaceResult[]): PlaceResult[] {
@@ -111,7 +110,8 @@ export class PlacesService {
         tags: Array.from(new Set([...existing.tags, ...place.tags])),
         latitude: existing.latitude ?? place.latitude,
         longitude: existing.longitude ?? place.longitude,
-        description: existing.description.length >= place.description.length ? existing.description : place.description
+        description: existing.description.length >= place.description.length ? existing.description : place.description,
+        qualityScore: Math.max(existing.qualityScore ?? 0, place.qualityScore ?? 0) || undefined
       });
     }
 
@@ -125,10 +125,30 @@ export class PlacesService {
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "-");
-    const latitude = typeof place.latitude === "number" ? place.latitude.toFixed(3) : "no-lat";
-    const longitude = typeof place.longitude === "number" ? place.longitude.toFixed(3) : "no-lon";
 
-    return `${normalizedName}_${latitude}_${longitude}`;
+    return this.canonicalPlaceKey(normalizedName);
+  }
+
+  private canonicalPlaceKey(normalizedName: string): string {
+    const aliasGroups: string[][] = [
+      ["colosseum", "kolosseum"],
+      ["roman-forum", "forum-romanum"],
+      ["pantheon", "pantheon-rome"],
+      ["trevi-fountain", "trevi-brunnen", "fontana-di-trevi"],
+      ["eiffel-tower", "eiffelturm"],
+      ["brandenburg-gate", "brandenburger-tor"],
+      ["museum-island", "museumsinsel"],
+      ["sagrada-familia", "basilica-de-la-sagrada-familia"],
+      ["park-guell", "park-guell"]
+    ];
+
+    for (const aliases of aliasGroups) {
+      if (aliases.includes(normalizedName)) {
+        return aliases[0];
+      }
+    }
+
+    return normalizedName;
   }
 
   private getSources(places: PlaceResult[]): PlaceSource[] {

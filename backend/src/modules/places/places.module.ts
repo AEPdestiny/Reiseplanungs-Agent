@@ -4,12 +4,14 @@ import { OpenTripMapPlacesProvider } from "../../providers/places/opentripmap-pl
 import { WikidataPlacesProvider } from "../../providers/places/wikidata-places.provider";
 import { WikipediaPlacesProvider } from "../../providers/places/wikipedia-places.provider";
 import { PLACES_PROVIDER } from "./places-provider.interface";
+import { PlaceRankingService } from "./place-ranking.service";
 import { PlacesService } from "./places.service";
 
 @Module({
   imports: [GeocodingModule],
   providers: [
     PlacesService,
+    PlaceRankingService,
     WikidataPlacesProvider,
     WikipediaPlacesProvider,
     OpenTripMapPlacesProvider,

@@ -10,6 +10,7 @@ interface OpenTripMapRadiusItem {
     lat?: unknown;
     lon?: unknown;
   };
+  rate?: unknown;
 }
 
 interface OpenTripMapDetails {
@@ -23,6 +24,7 @@ interface OpenTripMapDetails {
     lat?: unknown;
     lon?: unknown;
   };
+  rate?: unknown;
 }
 
 @Injectable()
@@ -135,8 +137,18 @@ export class OpenTripMapPlacesProvider implements PlacesProvider {
       longitude: longitude ?? undefined,
       estimatedCostPerPerson: this.estimatedCostForCategory(category),
       indoor: this.isIndoorCategory(category),
+      qualityScore: this.qualityScoreFromRate(item.rate, description),
       source: "opentripmap"
     };
+  }
+
+  private qualityScoreFromRate(rate: unknown, description: string): number | undefined {
+    const parsedRate = typeof rate === "string" ? Number(rate) : typeof rate === "number" ? rate : Number.NaN;
+    const rateScore = Number.isFinite(parsedRate) ? Math.min(35, Math.max(0, parsedRate * 7)) : 0;
+    const extractScore = description.length > 80 ? 10 : 0;
+    const score = 45 + rateScore + extractScore;
+
+    return Math.max(0, Math.min(100, Math.round(score)));
   }
 
   private categoryFromKinds(kinds: string): PlaceCategory {

@@ -293,7 +293,7 @@ export class PlanningAgentService {
         displayLabel: "Planning Agent",
         status: "completed",
         summary: usedPlacesPlanning
-          ? "Planning Agent: Real Data Plan erstellt"
+          ? "Planning Agent: Top 12 POIs ausgewaehlt"
           : usedOpenAiPlanning
             ? "AI-generierter Plan erstellt"
             : "Planning Agent: Generic Destination Plan erstellt"

@@ -25,6 +25,13 @@ export class WikidataPlacesProvider implements PlacesProvider {
   private readonly sparqlUrl = "https://query.wikidata.org/sparql";
   private readonly timeoutMs = 8000;
   private readonly userAgent = "Reiseplanungs-Agent/0.1 (https://github.com/AEPdestiny/Reiseplanungs-Agent)";
+  private readonly knownHighlightIdsByDestination: Record<string, string[]> = {
+    Rome: ["Q10285", "Q99309", "Q180212", "Q185382", "Q182955"],
+    Paris: ["Q243", "Q19675", "Q64436", "Q2981", "Q23402"],
+    Barcelona: ["Q48435", "Q167240", "Q174775", "Q179203"],
+    Istanbul: ["Q125083", "Q184225", "Q193618", "Q193006"],
+    Berlin: ["Q82425", "Q151724", "Q43332", "Q154987"]
+  };
 
   async getPlacesForDestination(
     destination: string,
@@ -38,9 +45,13 @@ export class WikidataPlacesProvider implements PlacesProvider {
     }
 
     try {
-      const response = await this.fetchPlaces(normalizedDestination);
-      const places = this.normalizePlaces(response);
-      return places.sort((left, right) => left.name.localeCompare(right.name)).slice(0, 18);
+      const destinationAlias = this.resolveDestinationAlias(normalizedDestination);
+      const [nearbyResponse, highlightResponse] = await Promise.all([
+        this.fetchPlaces(destinationAlias).catch(() => ({})),
+        this.fetchKnownHighlights(destinationAlias).catch(() => ({}))
+      ]);
+
+      return this.normalizePlaces(this.mergeResponses(nearbyResponse, highlightResponse));
     } catch {
       return [];
     }
@@ -111,6 +122,72 @@ SELECT DISTINCT ?place ?placeLabel ?placeDescription ?coord ?category WHERE {
   }
 }
 LIMIT 40`;
+  }
+
+  private async fetchKnownHighlights(destination: string): Promise<WikidataSparqlResponse> {
+    const highlightIds = this.knownHighlightIdsByDestination[destination] ?? [];
+
+    if (highlightIds.length === 0) {
+      return {};
+    }
+
+    const url = new URL(this.sparqlUrl);
+    url.searchParams.set("query", this.buildKnownHighlightsQuery(highlightIds));
+    url.searchParams.set("format", "json");
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/sparql-results+json",
+          "User-Agent": this.userAgent
+        },
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        return {};
+      }
+
+      return (await response.json()) as WikidataSparqlResponse;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  private buildKnownHighlightsQuery(highlightIds: string[]): string {
+    const values = highlightIds.map((id) => `wd:${id}`).join(" ");
+
+    return `
+SELECT DISTINCT ?place ?placeLabel ?placeDescription ?coord ?category WHERE {
+  VALUES ?place { ${values} }
+  OPTIONAL { ?place wdt:P625 ?coord. }
+  OPTIONAL {
+    ?place wdt:P31/wdt:P279* ?category.
+    VALUES ?category {
+      wd:Q33506
+      wd:Q570116
+      wd:Q22698
+      wd:Q839954
+      wd:Q23413
+      wd:Q4989906
+      wd:Q1248784
+      wd:Q41253
+      wd:Q11707
+      wd:Q12280
+      wd:Q24354
+      wd:Q179700
+    }
+  }
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "de,en".
+    ?place rdfs:label ?placeLabel.
+    ?place schema:description ?placeDescription.
+  }
+}
+LIMIT 20`;
   }
 
   private createCityCenterBinding(destination: string): string {
@@ -187,6 +264,14 @@ LIMIT 40`;
     }
 
     return Array.from(placesById.values());
+  }
+
+  private mergeResponses(...responses: WikidataSparqlResponse[]): WikidataSparqlResponse {
+    return {
+      results: {
+        bindings: responses.flatMap((response) => response.results?.bindings ?? [])
+      }
+    };
   }
 
   private categoryFromEntity(entityUrl: string): PlaceCategory | null {
