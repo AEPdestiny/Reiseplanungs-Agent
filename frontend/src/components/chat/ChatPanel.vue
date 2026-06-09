@@ -7,7 +7,7 @@
 
     <div class="messages" aria-live="polite">
       <p v-if="messages.length === 0" class="empty-state">
-        Lade eine Demo-Reise und frage den Agenten nach Begruendungen oder Alternativen.
+        Lade eine Demo-Reise und frage den Agenten nach Begründungen oder Alternativen.
       </p>
       <article v-for="message in messages" :key="message.id" :class="['message', message.role]">
         <span>{{ message.role === "user" ? "Du" : "Agent" }}</span>
@@ -56,7 +56,11 @@ async function sendMessage(): Promise<void> {
 <style scoped>
 .chat-panel {
   display: grid;
+  grid-template-rows: auto minmax(260px, 1fr) auto auto;
   gap: var(--space-3);
+  min-height: 520px;
+  max-height: 720px;
+  overflow: hidden;
 }
 
 .panel-header {
@@ -76,9 +80,11 @@ async function sendMessage(): Promise<void> {
 
 .messages {
   display: grid;
+  align-content: start;
   gap: var(--space-3);
-  max-height: 360px;
+  min-height: 260px;
   overflow: auto;
+  padding-right: var(--space-1);
 }
 
 .message {
@@ -111,10 +117,13 @@ async function sendMessage(): Promise<void> {
 .chat-form {
   display: grid;
   gap: var(--space-2);
+  background: var(--color-surface);
 }
 
 textarea {
   width: 100%;
+  min-height: 92px;
+  max-height: 160px;
   resize: vertical;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -140,5 +149,12 @@ button {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+@media (max-width: 980px) {
+  .chat-panel {
+    min-height: 420px;
+    max-height: none;
+  }
 }
 </style>

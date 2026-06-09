@@ -34,7 +34,7 @@
     <slot v-if="!hasTrip" name="empty-state" />
 
     <section v-else class="dashboard-grid" aria-label="Reiseplanungs-Dashboard">
-      <div class="grid-column side-column">
+      <div class="grid-column side-column left-column">
         <slot name="chat" />
         <slot name="agent-insights" />
       </div>
@@ -45,8 +45,9 @@
         <slot name="route" />
       </div>
 
-      <div class="grid-column side-column">
+      <div class="grid-column side-column right-column">
         <slot name="budget" />
+        <slot name="weather" />
         <slot name="checklist" />
       </div>
     </section>
@@ -191,19 +192,36 @@ button:disabled {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(280px, 0.85fr) minmax(420px, 1.5fr) minmax(280px, 0.9fr);
+  grid-template-columns: minmax(300px, 0.9fr) minmax(520px, 1.6fr) minmax(300px, 0.95fr);
   gap: var(--space-4);
   align-items: start;
-  max-width: 1440px;
+  max-width: 1560px;
   margin: 0 auto;
 }
 
 .grid-column {
   display: grid;
   gap: var(--space-4);
+  min-width: 0;
 }
 
-@media (max-width: 1100px) {
+.main-column,
+.side-column {
+  min-width: 0;
+}
+
+@media (max-width: 1180px) {
+  .dashboard-grid {
+    grid-template-columns: minmax(280px, 0.85fr) minmax(460px, 1.35fr);
+  }
+
+  .right-column {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
   .dashboard-header {
     flex-direction: column;
   }
@@ -214,6 +232,20 @@ button:disabled {
 
   .dashboard-grid {
     grid-template-columns: 1fr;
+  }
+
+  .main-column {
+    order: 1;
+  }
+
+  .right-column {
+    grid-column: auto;
+    grid-template-columns: 1fr;
+    order: 2;
+  }
+
+  .left-column {
+    order: 3;
   }
 }
 

@@ -27,6 +27,9 @@
     <template #budget>
       <BudgetPanel />
     </template>
+    <template #weather>
+      <WeatherForecastPanel />
+    </template>
     <template #route>
       <MapPanel />
     </template>
@@ -56,6 +59,7 @@ import ReplanningProposalPanel from "@/components/replanning/ReplanningProposalP
 import DayPlanPanel from "@/components/trip/DayPlanPanel.vue";
 import MapPanel from "@/components/trip/MapPanel.vue";
 import TripPlanningForm from "@/components/trip/TripPlanningForm.vue";
+import WeatherForecastPanel from "@/components/weather/WeatherForecastPanel.vue";
 import { healthCheck } from "@/services/travel-api.service";
 import { useProposalStore } from "@/stores/proposal.store";
 import { useTripStore } from "@/stores/trip.store";

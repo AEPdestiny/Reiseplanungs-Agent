@@ -57,7 +57,7 @@ function formatStatus(status: string): string {
   const labels: Record<string, string> = {
     within_budget: "Im Budget",
     near_limit: "Nahe Limit",
-    over_budget: "Ueber Budget"
+    over_budget: "Über Budget"
   };
 
   return labels[status] ?? status;

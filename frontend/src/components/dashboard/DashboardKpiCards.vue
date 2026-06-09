@@ -26,20 +26,29 @@ const activityCount = computed(() => {
 const activeSources = computed(() => {
   const sources = new Set<string>();
   const summaries = agentInsights.value.map((insight) => insight.summary.toLowerCase());
+  const allSummaries = summaries.join(" ");
 
-  if (summaries.some((summary) => summary.includes("nominatim"))) {
+  if (allSummaries.includes("nominatim")) {
     sources.add("Nominatim");
   }
 
-  if (summaries.some((summary) => summary.includes("open-meteo"))) {
+  if (allSummaries.includes("open-meteo")) {
     sources.add("Open-Meteo");
   }
 
-  if (summaries.some((summary) => summary.includes("wikidata"))) {
+  if (allSummaries.includes("wikidata")) {
     sources.add("Wikidata");
   }
 
-  if (plan.value) {
+  if (allSummaries.includes("wikipedia")) {
+    sources.add("Wikipedia");
+  }
+
+  if (allSummaries.includes("opentripmap")) {
+    sources.add("OpenTripMap");
+  }
+
+  if (plan.value || allSummaries.includes("openstreetmap")) {
     sources.add("OpenStreetMap");
   }
 
@@ -53,7 +62,7 @@ const cards = computed(() => [
     detail: plan.value ? "geplante Reisetage" : "noch keine Reise"
   },
   {
-    label: "Aktivitaeten",
+    label: "Aktivitäten",
     value: plan.value ? String(activityCount.value) : "-",
     detail: "aus dem aktiven Tagesplan"
   },

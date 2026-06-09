@@ -3,14 +3,12 @@
     <div class="planning-copy">
       <p class="eyebrow">Eigene Reise planen</p>
       <h2 id="planning-form-title">Free-API Reiseplanung</h2>
-      <p>
-        Ziel, Budget und Interessen eingeben. Das Backend plant mit Geocoding, Wetter, Places und Recommendation Scoring.
-      </p>
+      <p>Ziel, Budget und Interessen eingeben. Das Backend plant mit Geocoding, Wetter und echten Orten.</p>
     </div>
 
     <form class="planning-form" @submit.prevent="submitForm">
       <label class="field field-wide">
-        <span>Destination</span>
+        <span>Reiseziel</span>
         <input v-model.trim="form.destination" type="text" placeholder="Rom, Paris, Istanbul" required />
       </label>
 
@@ -25,7 +23,7 @@
       </label>
 
       <label class="field">
-        <span>Currency</span>
+        <span>Währung</span>
         <input v-model="form.currency" type="text" readonly />
       </label>
 
@@ -77,9 +75,9 @@ const emit = defineEmits<{
 const interests = [
   { label: "Museen", value: "Museen" },
   { label: "Essen", value: "gutes Essen" },
-  { label: "Sehenswuerdigkeiten", value: "Sehenswuerdigkeiten" },
+  { label: "Sehenswürdigkeiten", value: "Sehenswuerdigkeiten" },
   { label: "Geschichte", value: "Geschichte" },
-  { label: "Spaziergaenge", value: "Spaziergaenge" },
+  { label: "Spaziergänge", value: "Spaziergaenge" },
   { label: "Natur", value: "Natur" },
   { label: "Shopping", value: "Shopping" }
 ];
@@ -104,7 +102,7 @@ function submitForm(): void {
   }
 
   if (form.interests.length === 0) {
-    validationError.value = "Bitte mindestens ein Interesse auswaehlen.";
+    validationError.value = "Bitte mindestens ein Interesse auswählen.";
     return;
   }
 

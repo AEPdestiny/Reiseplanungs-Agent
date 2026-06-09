@@ -7,3 +7,4 @@ coverage/
 frontend/dist/
 backend/dist/
 shared/dist/
+*.tsbuildinfo

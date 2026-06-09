@@ -3,7 +3,7 @@
     <div class="panel-header">
       <div>
         <h2>Karte</h2>
-        <p v-if="plan">{{ markerItems.length }} Orte fuer {{ plan.request.destination }}</p>
+        <p v-if="plan">{{ markerItems.length }} Orte für {{ plan.request.destination }}</p>
       </div>
       <span v-if="plan" class="map-source">OpenStreetMap</span>
     </div>

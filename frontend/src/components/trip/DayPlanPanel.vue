@@ -3,7 +3,7 @@
     <div class="panel-header">
       <div>
         <h2>Tagesplan</h2>
-        <p v-if="plan">{{ plan.days.length }} Tage fuer {{ plan.request.destination }}</p>
+        <p v-if="plan">{{ plan.days.length }} Tage für {{ plan.request.destination }}</p>
       </div>
       <span v-if="plan" class="status-pill">{{ plan.status }}</span>
     </div>
@@ -17,7 +17,7 @@
             <p class="day-number">Tag {{ day.dayNumber }}</p>
             <h3>{{ day.title }}</h3>
           </div>
-          <span v-if="day.weather" class="weather-pill">{{ day.weather.description }}</span>
+          <span v-if="day.weather" class="weather-pill">{{ formatWeatherCondition(day.weather.condition) }}</span>
         </header>
 
         <ol class="slot-list">
@@ -67,7 +67,7 @@ function formatCategory(category: string): string {
     restaurant: "Restaurant",
     sightseeing: "Sightseeing",
     walk: "Spaziergang",
-    activity: "Aktivitaet",
+    activity: "Aktivität",
     transport: "Transport",
     break: "Pause"
   };
@@ -80,6 +80,18 @@ function formatIndoorOutdoor(value: string): string {
     indoor: "Indoor",
     outdoor: "Outdoor",
     mixed: "Gemischt"
+  };
+
+  return labels[value] ?? value;
+}
+
+function formatWeatherCondition(value: string): string {
+  const labels: Record<string, string> = {
+    sunny: "Sonnig",
+    cloudy: "Bewölkt",
+    rain: "Regen",
+    storm: "Sturm",
+    snow: "Schnee"
   };
 
   return labels[value] ?? value;
